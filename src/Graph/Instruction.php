@@ -13,12 +13,12 @@ abstract class Instruction
 
     protected function string($string)
     {
-        if ($string === null || strlen($string) === 0) {
+        if ($string === null || \strlen($string) === 0) {
             return null;
         }
 
         // TODO: Check and fix
-        return "'" . addcslashes($string, "':") . "'";
+        return "'" . \addcslashes($string, "':") . "'";
     }
 
     /**
@@ -27,7 +27,7 @@ abstract class Instruction
      */
     protected function optionalParameter($parameter)
     {
-        if (strlen($parameter)) {
+        if (\strlen($parameter)) {
             return ":$parameter";
         } else {
             return '';
@@ -40,7 +40,7 @@ abstract class Instruction
      */
     protected function optionalNamedParameter($parameter, $value)
     {
-        if (strlen($value)) {
+        if (\strlen($value)) {
             return ":${parameter}=${value}";
         } else {
             return '';

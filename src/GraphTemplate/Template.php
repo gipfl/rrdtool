@@ -33,11 +33,11 @@ abstract class Template
 
         $stepColor = new Color($color);
         for ($i = 1; $i <= $steps; $i++) {
-            $alpha = sprintf('%02x', floor($grad * $i));
+            $alpha = \sprintf('%02x', floor($grad * $i));
             $graph->add((new Area($avgStep, $stepColor->setAlphaHex($alpha)))->setStack());
         }
         for ($i = $steps; $i > 0; $i--) {
-            $alpha = sprintf('%02x', floor($grad * $i));
+            $alpha = \sprintf('%02x', floor($grad * $i));
             $area = new Area($maxStep, $stepColor->setAlphaHex($alpha));
             $area->setStack()->setSkipScale();
             $graph->add($area);

@@ -20,12 +20,12 @@ class Color
             $this->hexCode = $hexCode->getHexCode();
             $this->alpha = $hexCode->getAlphaHex();
         } else {
-            $hexCode = ltrim($hexCode, '#');
-            if (strlen($hexCode) === 6) {
+            $hexCode = \ltrim($hexCode, '#');
+            if (\strlen($hexCode) === 6) {
                 $this->hexCode = $hexCode;
-            } elseif (strlen($hexCode) === 8) {
-                $this->hexCode = substr($hexCode, 0, 6);
-                $this->alpha = substr($hexCode, 6);
+            } elseif (\strlen($hexCode) === 8) {
+                $this->hexCode = \substr($hexCode, 0, 6);
+                $this->alpha = \substr($hexCode, 6);
             } else {
                 throw new InvalidArgumentException("Valid color hex code expected, got $hexCode");
             }

@@ -53,7 +53,7 @@ class VmwareIfPacketsGraph extends Template
         $graph->add((new HRule(0, $graph->getTextColor()->setAlphaHex('80'))));
 
         foreach ($colors as $name => $color) {
-            if (substr($name, 0, 7) === 'packets') {
+            if (\substr($name, 0, 7) === 'packets') {
                 continue;
             }
             $line = new Area($cdefs[$name], $color . '99');

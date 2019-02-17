@@ -1,0 +1,5 @@
+/vendor/
+/.idea/
+.*.sw[op]
+composer.lock
+/tests/.phpunit*

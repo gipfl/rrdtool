@@ -192,6 +192,10 @@ class Client
         });
     }
 
+    /**
+     * @param $file
+     * @return \React\Promise\Promise
+     */
     public function flush($file)
     {
         $file = $this->quoteFilename($file);
@@ -215,11 +219,15 @@ class Client
         });
     }
 
+    /**
+     * @param $file
+     * @return \React\Promise\Promise
+     */
     public function flushAndForget($file)
     {
         $file = $this->quoteFilename($file);
 
-        $this->flush($file)->then(function () use ($file) {
+        return $this->flush($file)->then(function () use ($file) {
             return $this->forget($file);
         });
     }

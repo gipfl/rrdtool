@@ -2,11 +2,9 @@
 
 namespace gipfl\RrdTool\GraphTemplate;
 
-use Icinga\Web\UrlParams;
-
 class TemplateLoader
 {
-    public function load($template, $filename, UrlParams $params)
+    public function load($template, $filename)
     {
         switch ($template) {
             case 'interface':
@@ -30,7 +28,7 @@ class TemplateLoader
             case 'cpu':
                 return new CpuGraph($filename);
             default:
-                return new DefaultGraph($filename, $params);
+                return new DefaultGraph($filename);
         }
     }
 }

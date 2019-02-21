@@ -3,25 +3,16 @@
 namespace gipfl\RrdTool\GraphTemplate;
 
 use gipfl\RrdTool\RrdGraph;
-use Icinga\Web\UrlParams;
 
 class DefaultGraph extends Template
 {
-    protected $params;
-
     /** @var string  */
     protected $color = '0095BF'; // @icinga-blue
-
-    public function __construct($filename, UrlParams $params)
-    {
-        parent::__construct($filename);
-        $this->params = $params;
-    }
 
     public function applyToGraph(RrdGraph $graph)
     {
         $filename = $this->filename;
-        $params = $this->params;
+        // TODO: this is currently broken, we need parameters.
         $ds = $params->get('ds');
         $rra = $params->get('rra', 'AVERAGE');
         $showMaxPercentile = $params->get('maxPercentile', 100);

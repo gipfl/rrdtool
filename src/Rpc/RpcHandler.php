@@ -76,7 +76,7 @@ class RpcHandler implements PacketHandler
         }
 
         $template = $packet->getParam('template');
-        $file = $packet->getParam('template');
+        $file = $packet->getParam('file');
 
         $loader = new TemplateLoader();
         $template = $loader->load($template, $file);

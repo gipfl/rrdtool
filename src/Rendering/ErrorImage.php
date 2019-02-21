@@ -31,6 +31,22 @@ class ErrorImage
         return $this;
     }
 
+    protected function shortenFileInTrace($file)
+    {
+        return preg_replace(
+            '_^(#\d+)\s+/.+?/(?:vendor|application|library|src)/_m', '\1:',
+            $file
+        );
+    }
+
+    protected function shortenFile($file)
+    {
+        return preg_replace(
+            '_^/.+?/(?:vendor|application|library|src)/_m', '',
+            $file
+        );
+    }
+
     public function render($width, $height)
     {
         $error = $this->error;
@@ -39,9 +55,9 @@ class ErrorImage
             if ($this->showStackTrace) {
                 $message .= sprintf(
                     "\nin %s(%s)\n%s\n",
-                    $error->getFile(),
+                    $this->shortenFile($error->getFile()),
                     $error->getLine(),
-                    $error->getTraceAsString()
+                    $this->shortenFileInTrace($error->getTraceAsString())
                 );
             }
         } else {

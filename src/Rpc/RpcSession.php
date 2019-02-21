@@ -4,6 +4,7 @@ namespace gipfl\RrdTool\Rpc;
 
 use gipfl\Protocol\JsonRpc\Connection;
 use gipfl\Protocol\NetString\StreamWrapper;
+use gipfl\RrdTool\Rrdtool;
 use React\Socket\ConnectionInterface;
 
 class RpcSession
@@ -20,7 +21,7 @@ class RpcSession
     protected function enableRpcHandlers(Connection $jsonRpc)
     {
         $jsonRpc->setNamespaceSeparator('.');
-        $jsonRpc->setHandler(new RpcHandler($jsonRpc), 'rrd');
+        $jsonRpc->setHandler(new RpcHandler($jsonRpc, $rrdtool), 'rrd');
 
         return $jsonRpc;
     }

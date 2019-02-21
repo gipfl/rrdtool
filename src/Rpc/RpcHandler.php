@@ -9,6 +9,7 @@ use gipfl\Protocol\JsonRpc\Request;
 use gipfl\Protocol\JsonRpc\Response;
 use gipfl\RrdTool\GraphTemplate\TemplateLoader;
 use gipfl\RrdTool\RrdGraph;
+use gipfl\RrdTool\RrdGraphInfo;
 use gipfl\RrdTool\RrdSummary;
 use gipfl\RrdTool\Rrdtool;
 
@@ -80,8 +81,9 @@ class RpcHandler implements PacketHandler
         $loader = new TemplateLoader();
         $template = $loader->load($template, $file);
         $template->applyToGraph($graph);
-        $image = base64_encode($graph->getRaw($this->rrdtool, true));
 
-        return $image;
+        $info = new RrdGraphInfo($graph);
+
+        return $info->getDetails($this->rrdtool);
     }
 }

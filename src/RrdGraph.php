@@ -64,6 +64,9 @@ class RrdGraph
     protected $lowerLimit;
 
     /** @var bool */
+    protected $rigid = false;
+
+    /** @var bool */
     protected $useNanForAllMissingData = false;
 
     /** @var bool */
@@ -381,6 +384,17 @@ class RrdGraph
     }
 
     /**
+     * @param bool $rigid
+     * @return $this
+     */
+    public function setRigid($rigid = true)
+    {
+        $this->rigid = (bool) $rigid;
+
+        return $this;
+    }
+
+    /**
      * @return bool
      */
     public function isRrdToolTagEnabled()
@@ -483,7 +497,7 @@ class RrdGraph
             '--imgformat' => $this->getFormat(),
             // '-n AXIS:5',
             '--units-length' => '4',
-            // '--rigid',
+            '--rigid' => $this->rigid,
             // '--autoscale',
             // '--alt-autoscale',
             // '--no-gridfit',
@@ -500,8 +514,8 @@ class RrdGraph
         ];
 
         if ($this->drawOnlyGraph()) {
-            // $params[] = '--only-graph';
-            // $params[] = '--color CANVAS#ffffff00';
+             $params[] = '--only-graph';
+             $params[] = '--color CANVAS#ffffff00';
         }
 
         return $params;

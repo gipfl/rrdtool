@@ -17,16 +17,23 @@ class CpuGraph extends Template
             'softirq'    => 'F962F5', // softirq
             'irq'        => '8362F9', // irq
             'nice'       => 'D48823', // nice
-            'idle'       => '44bb77', // idle
             'steal'      => '000000',
             'guest'      => '333333',
             'guest_nice' => 'aaaaaa',
+            'idle'       => '44bb77', // idle
 
         ];
 
+        $first = true;
         foreach ($parts as $ds => $color) {
             $def = $graph->def($filename, $ds, 'AVERAGE');
-            $graph->area($def, $color, $ds !== 1);
+            if ($ds === 'idle') {
+                $def = $graph->cdef("$def,100,MAXNAN");
+            }
+            $graph->area($def, $color, ! $first);
+            $first = false;
         }
+
+        $graph->setLowerLimit(0)->setUpperLimit(100)->setRigid();
     }
 }

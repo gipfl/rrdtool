@@ -47,4 +47,22 @@ abstract class Template
         $graph->add(new Line($avg, $color, $legend));
         $graph->add(new Line($pctMax));
     }
+
+    protected function simpleSmoke(RrdGraph $graph, $file, $ds, $color, $multiplier = null)
+    {
+        if ($multiplier === null) {
+            $multi = '';
+        } else {
+            $multi = ",$multiplier,*";
+        }
+        $minDef  = $graph->def($file, $ds, 'MIN');
+        $minCdef = $graph->cdef("$minDef$multi");
+        $graph->add(new Area($minCdef));
+        $maxDef  = $graph->def($file, $ds, 'MAX');
+        $maxCdef = $graph->cdef("$maxDef,$minDef,-$multi");
+        $graph->add((new Area($maxCdef, new Color($color, '66')))->setStack());
+        $avgDef  = $graph->def($file, $ds, 'AVERAGE');
+        $avgCdef = $graph->cdef("$avgDef$multi");
+        $graph->add(new Line($avgCdef, new Color($color)));
+    }
 }

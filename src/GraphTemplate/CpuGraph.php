@@ -2,6 +2,7 @@
 
 namespace gipfl\RrdTool\GraphTemplate;
 
+use gipfl\RrdTool\Graph\Area;
 use gipfl\RrdTool\RrdGraph;
 
 class CpuGraph extends Template
@@ -11,16 +12,16 @@ class CpuGraph extends Template
         $filename = $this->filename;
 
         $parts = [
-            'iowait'     => 'F96266', // iowait
-            'softirq'    => 'F962F5', // softirq
-            'irq'        => '8362F9', // irq
-            'nice'       => 'D48823', // nice
-            'steal'      => '000000',
-            'guest'      => '333333',
-            'guest_nice' => 'aaaaaa',
-            'system'     => 'F9AF62', // sys
-            'user'       => 'F9E962', // user
-            'idle'       => '44bb77', // idle
+            'iowait'     => '#F96266',
+            'softirq'    => '#F962F5',
+            'irq'        => '#8362F9',
+            'nice'       => '#D48823',
+            'steal'      => '#000000',
+            'guest'      => '#333333',
+            'guest_nice' => '#aaaaaa',
+            'system'     => '#F9AF62',
+            'user'       => '#F9E962',
+            'idle'       => '#44bb77',
         ];
         $defs = [];
 
@@ -28,7 +29,9 @@ class CpuGraph extends Template
         foreach ($parts as $ds => $color) {
             $def = $graph->def($filename, $ds, 'AVERAGE');
             $defs[$ds] = $def;
-            $graph->area($def, $color, ! $first);
+            $area = new Area($def, $color);
+            $area->setStack(! $first);
+            $graph->add($area);
             $first = false;
         }
 

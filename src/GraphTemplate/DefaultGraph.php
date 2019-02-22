@@ -13,12 +13,12 @@ class DefaultGraph extends Template
     {
         $filename = $this->filename;
         // TODO: this is currently broken, we need parameters.
-        $ds = $params->get('ds');
-        $rra = $params->get('rra', 'AVERAGE');
-        $showMaxPercentile = $params->get('maxPercentile', 100);
-        $smoke = $params->get('smoke');
-        $color = $params->get('color', $this->color);
-        $graph->setLowerLimit(0);
+        $ds = 0;//  $params->get('ds');
+        $rra = 'AVERAGE'; // $params->get('rra', 'AVERAGE');
+        $showMaxPercentile = false; //$params->get('maxPercentile', 100);
+        $smoke = false; // $params->get('smoke');
+        $color = '#ff0000'; // $params->get('color', $this->color);
+        //$graph->setLowerLimit(0);
 
         // $graph->addWarningRule(10);
         // $graph->addCriticalRule(20);

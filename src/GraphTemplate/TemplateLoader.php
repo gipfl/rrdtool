@@ -11,6 +11,10 @@ class TemplateLoader
                 return new InterfaceGraph($filename);
             case 'pnp_interfaces':
                 return new PnpInterfaceGraph($filename);
+            case 'RRDHealth':
+                return new RRDHealthGraph($filename);
+            case 'RRDCacheDUpdates':
+                return new RRDCacheDUpdatesGraph($filename);
             case 'vSphereDB-vmIfTraffic':
                 return new VmwareInterfaceGraph($filename);
             case 'vSphereDB-vmIfPackets':

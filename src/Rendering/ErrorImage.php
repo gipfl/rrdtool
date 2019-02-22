@@ -34,7 +34,7 @@ class ErrorImage
     protected function shortenFileInTrace($file)
     {
         return preg_replace(
-            '_^(#\d+)\s+/.+?/(?:vendor|application|library|src)/_m', '\1:',
+            '_^(#\d+)\s+/.+?/(?:vendor|application|library)/_m', '\1:',
             $file
         );
     }
@@ -42,7 +42,7 @@ class ErrorImage
     protected function shortenFile($file)
     {
         return preg_replace(
-            '_^/.+?/(?:vendor|application|library|src)/_m', '',
+            '_^/.+?/(?:vendor|application|library)/_m', '',
             $file
         );
     }

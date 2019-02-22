@@ -15,14 +15,10 @@ use gipfl\RrdTool\Rrdtool;
 
 class RpcHandler implements PacketHandler
 {
-    /** @var Connection  */
-    protected $connection;
-
     protected $rrdtool;
 
-    public function __construct(Connection $connection, Rrdtool $rrdtool)
+    public function __construct(Rrdtool $rrdtool)
     {
-        $this->connection = $connection;
         $this->rrdtool = $rrdtool;
     }
 

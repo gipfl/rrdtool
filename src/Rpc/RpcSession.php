@@ -4,26 +4,24 @@ namespace gipfl\RrdTool\Rpc;
 
 use gipfl\Protocol\JsonRpc\Connection;
 use gipfl\Protocol\NetString\StreamWrapper;
-use gipfl\RrdTool\Rrdtool;
 use React\Socket\ConnectionInterface;
 
 class RpcSession
 {
+    /** @var Connection */
     protected $jsonRpc;
 
     public function __construct(ConnectionInterface $connection)
     {
-        $this->jsonRpc = $this->enableRpcHandlers(
-            $this->enableProtocol($connection)
-        );
+        $this->jsonRpc = $this->enableProtocol($connection);
     }
 
-    protected function enableRpcHandlers(Connection $jsonRpc)
+    /**
+     * @return Connection
+     */
+    public function getConnection()
     {
-        $jsonRpc->setNamespaceSeparator('.');
-        $jsonRpc->setHandler(new RpcHandler($jsonRpc, $rrdtool), 'rrd');
-
-        return $jsonRpc;
+        return $this->jsonRpc;
     }
 
     protected function enableProtocol(ConnectionInterface $connection)

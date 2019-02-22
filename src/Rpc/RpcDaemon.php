@@ -2,6 +2,7 @@
 
 namespace gipfl\RrdTool\Rpc;
 
+use gipfl\RrdTool\Rrdtool;
 use Icinga\Application\Logger;
 use React\EventLoop\Factory as Loop;
 use React\Socket\ConnectionInterface;
@@ -15,6 +16,14 @@ class RpcDaemon
 
     /** @var SplObjectStorage */
     protected $connections;
+
+    /** @var Rrdtool */
+    protected $rrdtool;
+
+    public function __construct(Rrdtool $rrdtool)
+    {
+        $this->rrdtool = $rrdtool;
+    }
 
     public function run()
     {
@@ -36,6 +45,10 @@ class RpcDaemon
             $this->connections->attach($connection);
             Logger::debug('RPC connection from ' . $connection->getRemoteAddress());
             $session = new RpcSession($connection);
+            $session->getConnection()
+                ->setNamespaceSeparator('.')
+                ->setHandler(new RpcHandler($this->rrdtool), 'rrd');
+
             $connection->on('close', function () use ($session, $connection) {
                 Logger::debug('Closing RPC session for ' . $connection->getRemoteAddress());
                 unset($session);

@@ -478,8 +478,8 @@ class RrdGraph
             // '--daemon' => '127.0.0.1:...', // triggers flush
             '--color BACK#ffffff00',
             "--color CANVAS${blue}00",
-            "--color GRID${blue}07",
-            "--color MGRID${blue}22",
+            "--color GRID${blue}10",
+            "--color MGRID${blue}33",
             "--color ARROW${blue}00",
             "--color AXIS${blue}00",
             "--color FONT${textColor}",

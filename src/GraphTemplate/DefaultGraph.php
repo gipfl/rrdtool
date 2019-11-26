@@ -13,14 +13,20 @@ class DefaultGraph extends Template
     {
         $filename = $this->filename;
         $ds = $this->getParam('ds', 0); // Default DS
-        $rra = 'AVERAGE'; // $params->get('rra', 'AVERAGE');
-        $showMaxPercentile = false; //$params->get('maxPercentile', 100);
-        $smoke = false; // $params->get('smoke');
-        $color = '#ff0000'; // $params->get('color', $this->color);
-        //$graph->setLowerLimit(0);
+        $rra = $this->getParam('rra', 'AVERAGE');
+        $showMaxPercentile = $this->getParam('maxPercentile', false); // default 100?
+        $smoke = $this->getParam('smoke', false);
+        $color = $this->getParam('color', $this->color);
 
-        // $graph->addWarningRule(10);
-        // $graph->addCriticalRule(20);
+        if (null !== $value = $this->getParam('lowerLimit')) {
+            $graph->setLowerLimit($value);
+        }
+        if (null !== $value = $this->getParam('warningRule')) {
+            $graph->addWarningRule($value);
+        }
+        if (null !== $value = $this->getParam('criticalRule')) {
+            $graph->addCriticalRule($value);
+        }
         // $graph->addPacketLoss($file, 2);
 
         if ($smoke) {

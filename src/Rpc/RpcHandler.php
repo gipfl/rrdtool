@@ -2,7 +2,6 @@
 
 namespace gipfl\RrdTool\Rpc;
 
-use gipfl\Protocol\JsonRpc\Connection;
 use gipfl\Protocol\JsonRpc\Notification;
 use gipfl\Protocol\JsonRpc\PacketHandler;
 use gipfl\Protocol\JsonRpc\Request;
@@ -76,6 +75,7 @@ class RpcHandler implements PacketHandler
 
         $loader = new TemplateLoader();
         $template = $loader->load($template, $file);
+        $template->setParams((array) $packet->getParams());
         $template->applyToGraph($graph);
 
         $info = new RrdGraphInfo($graph);

@@ -11,9 +11,32 @@ abstract class Template
 {
     protected $filename;
 
-    public function __construct($filename)
+    protected $params;
+
+    public function __construct($filename, $params = null)
     {
         $this->filename = $filename;
+        if ($params === null) {
+            $this->setParams([]);
+        } else {
+            $this->setParams($params);
+        }
+    }
+
+    public function setParams($params)
+    {
+        $this->params = $params;
+
+        return $this;
+    }
+
+    protected function getParam($name, $default = null)
+    {
+        if (\array_key_exists($name, $this->params)) {
+            return $this->params[$name];
+        } else {
+            return $default;
+        }
     }
 
     abstract public function applyToGraph(RrdGraph $graph);

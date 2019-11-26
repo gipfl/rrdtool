@@ -12,8 +12,7 @@ class DefaultGraph extends Template
     public function applyToGraph(RrdGraph $graph)
     {
         $filename = $this->filename;
-        // TODO: this is currently broken, we need parameters.
-        $ds = 0;//  $params->get('ds');
+        $ds = $this->getParam('ds', 0); // Default DS
         $rra = 'AVERAGE'; // $params->get('rra', 'AVERAGE');
         $showMaxPercentile = false; //$params->get('maxPercentile', 100);
         $smoke = false; // $params->get('smoke');

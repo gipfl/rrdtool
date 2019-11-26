@@ -71,7 +71,7 @@ class RrdGraphInfo
                 }
                 $props['print'][$key] = $value;
             } else {
-                throw new RuntimeException("Unable to parse rrdgraph info line: $line");
+                throw new RuntimeException("Unable to parse rrdgraph info line: '$line'");
             }
         }
         $format = $this->graph->getFormat();

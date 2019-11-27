@@ -2,40 +2,18 @@
 
 namespace gipfl\RrdTool\Graph;
 
-class Line extends Instruction
+class Line extends DefinitionBasedInstruction
 {
     use Dashes;
 
-    /** @var string */
-    protected $definition;
-
     /** @var float */
     protected $width = 1;
-
-    /** @var Color */
-    protected $color;
-
-    /** @var string|null */
-    protected $legend;
 
     /** @var bool */
     protected $stack = false;
 
     /** @var bool */
     protected $skipScale = false;
-
-    /**
-     * Area constructor.
-     * @param string $definition
-     * @param Color|string $color
-     * @param string $legend
-     */
-    public function __construct($definition, $color = null, $legend = null)
-    {
-        $this->definition = (string) $definition;
-        $this->color = $this->wantColor($color);
-        $this->legend = $legend;
-    }
 
     /**
      * @return float
@@ -53,24 +31,6 @@ class Line extends Instruction
     {
         $this->width = $width;
 
-        return $this;
-    }
-
-    /**
-     * @return string|null
-     */
-    public function getLegend()
-    {
-        return $this->legend;
-    }
-
-    /**
-     * @param string|null $legend
-     * @return $this
-     */
-    public function setLegend($legend)
-    {
-        $this->legend = (string) $legend;
         return $this;
     }
 

@@ -4,19 +4,10 @@ namespace gipfl\RrdTool\Graph;
 
 use InvalidArgumentException;
 
-class Area extends Instruction
+class Area extends DefinitionBasedInstruction
 {
-    /** @var string */
-    protected $definition;
-
-    /** @var Color */
-    protected $color;
-
     /** @var Color */
     protected $color2;
-
-    /** @var string|null */
-    protected $legend;
 
     /** @var bool */
     protected $stack = false;
@@ -26,18 +17,6 @@ class Area extends Instruction
 
     /** @var string|null */
     protected $gradientHeight;
-
-    /**
-     * Area constructor.
-     * @param string $definition
-     * @param Color|string $color
-     */
-    public function __construct($definition, $color = null, $legend = null)
-    {
-        $this->definition = (string) $definition;
-        $this->color = $this->wantColor($color);
-        $this->legend = $legend;
-    }
 
     /**
      * @param Color|string $color
@@ -50,24 +29,6 @@ class Area extends Instruction
         }
         $this->color2 = $this->wantColor($color);
 
-        return $this;
-    }
-
-    /**
-     * @return string|null
-     */
-    public function getLegend()
-    {
-        return $this->legend;
-    }
-
-    /**
-     * @param string|null $legend
-     * @return Area
-     */
-    public function setLegend($legend)
-    {
-        $this->legend = (string) $legend;
         return $this;
     }
 

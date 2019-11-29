@@ -1,6 +1,6 @@
 <?php
 
-namespace gipfl\RrdTool\Graph;
+namespace gipfl\RrdTool\Graph\Instruction;
 
 class HRule extends DefinitionBasedInstruction
 {
@@ -10,7 +10,7 @@ class HRule extends DefinitionBasedInstruction
     {
         return 'HRULE:'
             . $this->definition
-            . $this->color
+            . $this->getColor()
             . $this::optionalParameter($this::string($this->getLegend()))
             . $this->renderDashProperties();
     }

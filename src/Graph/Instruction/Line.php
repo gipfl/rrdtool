@@ -1,6 +1,6 @@
 <?php
 
-namespace gipfl\RrdTool\Graph;
+namespace gipfl\RrdTool\Graph\Instruction;
 
 class Line extends DefinitionBasedInstruction
 {

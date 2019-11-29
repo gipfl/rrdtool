@@ -1,6 +1,6 @@
 <?php
 
-namespace gipfl\RrdTool\Graph;
+namespace gipfl\RrdTool\Graph\Instruction;
 
 abstract class Instruction
 {

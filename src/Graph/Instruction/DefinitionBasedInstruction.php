@@ -1,6 +1,8 @@
 <?php
 
-namespace gipfl\RrdTool\Graph;
+namespace gipfl\RrdTool\Graph\Instruction;
+
+use gipfl\RrdTool\Graph\Color;
 
 abstract class DefinitionBasedInstruction extends Instruction
 {

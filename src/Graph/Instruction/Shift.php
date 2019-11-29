@@ -1,6 +1,6 @@
 <?php
 
-namespace gipfl\RrdTool\Graph;
+namespace gipfl\RrdTool\Graph\Instruction;
 
 class Shift extends Instruction
 {

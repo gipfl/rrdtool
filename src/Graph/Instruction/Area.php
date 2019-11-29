@@ -1,7 +1,8 @@
 <?php
 
-namespace gipfl\RrdTool\Graph;
+namespace gipfl\RrdTool\Graph\Instruction;
 
+use gipfl\RrdTool\Graph\Color;
 use InvalidArgumentException;
 
 class Area extends DefinitionBasedInstruction

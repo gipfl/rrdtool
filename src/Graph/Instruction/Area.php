@@ -7,7 +7,7 @@ use InvalidArgumentException;
 
 class Area extends DefinitionBasedInstruction
 {
-    /** @var Color */
+    /** @var Color|null */
     protected $color2;
 
     /** @var bool */
@@ -18,6 +18,14 @@ class Area extends DefinitionBasedInstruction
 
     /** @var string|null */
     protected $gradientHeight;
+
+    /**
+     * @return Color|null
+     */
+    public function getSecondColor()
+    {
+        return $this->color2;
+    }
 
     /**
      * @param Color|string $color
@@ -89,21 +97,14 @@ class Area extends DefinitionBasedInstruction
 
     public function render()
     {
-        $string = 'AREA:'
+        return 'AREA:'
             . $this->getDefinition()
             . $this->getColor()
-            . $this->color2
-            . $this::optionalParameter($this::string($this->getLegend()));
-        if ($this->isStack()) {
-            $string .= ':STACK';
-        }
-
-        if ($this->isSkipScale()) {
-            $string .= ':skipscale';
-        }
-
-        $string .= $this::optionalNamedParameter('gradheight', $this->getGradientHeight());
-
-        return $string;
+            . $this->getSecondColor()
+            . $this::optionalParameter($this::string($this->getLegend()))
+            . $this::optionalNamedBoolean('STACK', $this->isStack())
+            . $this::optionalNamedBoolean('skipscale', $this->isSkipScale())
+            . $this::optionalNamedParameter('gradheight', $this->getGradientHeight())
+        ;
     }
 }

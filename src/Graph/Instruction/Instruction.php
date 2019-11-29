@@ -38,12 +38,27 @@ abstract class Instruction
 
     /**
      * @param $parameter
+     * @param $value
      * @return string
      */
     public static function optionalNamedParameter($parameter, $value)
     {
         if (\strlen($value)) {
             return ":${parameter}=${value}";
+        } else {
+            return '';
+        }
+    }
+
+    /**
+     * @param $parameter
+     * @param $value
+     * @return string
+     */
+    public static function optionalNamedBoolean($parameter, $value)
+    {
+        if ($value) {
+            return ":${parameter}";
         } else {
             return '';
         }

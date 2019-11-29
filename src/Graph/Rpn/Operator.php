@@ -67,6 +67,16 @@ class Operator
         Previous::NAME => Previous::class,
         // TODO: Prev(vname)
         Count::NAME => Count::class,
+
+        // TimeValue
+        Now::NAME => Now::class,
+        StepWidth::NAME => StepWidth::class,
+        NewDay::NAME => NewDay::class,
+        NewWeek::NAME => NewWeek::class,
+        NewMonth::NAME => NewMonth::class,
+        NewYear::NAME => NewYear::class,
+        Time::NAME => Time::class,
+        LocalTime::NAME => LocalTime::class,
     ];
 
     // Not sure about this:

@@ -58,6 +58,19 @@ class Color
         return $this->hexCode === null;
     }
 
+    /**
+     * @param $color
+     * @return Color
+     */
+    public static function create($color)
+    {
+        if ($color instanceof Color) {
+            return clone($color);
+        } else {
+            return new Color($color);
+        }
+    }
+
     public function __toString()
     {
         if ($this->isNull()) {

@@ -27,7 +27,7 @@ class Area extends DefinitionBasedInstruction
         if ($this->color->isNull()) {
             throw new InvalidArgumentException('Cannot set #color2 when no #color has been given');
         }
-        $this->color2 = $this->wantColor($color);
+        $this->color2 = Color::create($color);
 
         return $this;
     }

@@ -22,8 +22,8 @@ abstract class DefinitionBasedInstruction extends Instruction
     public function __construct($definition, $color = null, $legend = null)
     {
         $this->definition = (string) $definition;
-        $this->color = $this->wantColor($color);
-        $this->legend = $legend;
+        $this->setColor($color);
+        $this->setLegend($legend);
     }
 
     /**
@@ -58,7 +58,7 @@ abstract class DefinitionBasedInstruction extends Instruction
      */
     public function setColor($color)
     {
-        $this->color = $this->wantColor($color);
+        $this->color = $color === null ? null : Color::create($color);
         return $this;
     }
 

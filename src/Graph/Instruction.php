@@ -46,17 +46,4 @@ abstract class Instruction
             return '';
         }
     }
-
-    /**
-     * @param $color
-     * @return Color
-     */
-    protected function wantColor($color)
-    {
-        if ($color instanceof Color) {
-            return clone($color);
-        } else {
-            return new Color($color);
-        }
-    }
 }

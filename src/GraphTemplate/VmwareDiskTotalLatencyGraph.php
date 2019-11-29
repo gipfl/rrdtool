@@ -2,9 +2,9 @@
 
 namespace gipfl\RrdTool\GraphTemplate;
 
-use gipfl\RrdTool\Graph\Area;
 use gipfl\RrdTool\Graph\Color;
-use gipfl\RrdTool\Graph\Line;
+use gipfl\RrdTool\Graph\Instruction\Area;
+use gipfl\RrdTool\Graph\Instruction\Line;
 use gipfl\RrdTool\RrdGraph;
 
 class VmwareDiskTotalLatencyGraph extends Template

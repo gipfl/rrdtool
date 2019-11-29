@@ -2,8 +2,8 @@
 
 namespace gipfl\RrdTool\GraphTemplate;
 
-use gipfl\RrdTool\Graph\Line;
-use gipfl\RrdTool\Graph\Tick;
+use gipfl\RrdTool\Graph\Instruction\Line;
+use gipfl\RrdTool\Graph\Instruction\Tick;
 use gipfl\RrdTool\RrdGraph;
 
 class VmwareDiskReadWritesGraph extends Template

@@ -2,7 +2,7 @@
 
 namespace gipfl\RrdTool\GraphTemplate;
 
-use gipfl\RrdTool\Graph\Area;
+use gipfl\RrdTool\Graph\Instruction\Area;
 use gipfl\RrdTool\RrdGraph;
 
 abstract class StackedGraph extends Template

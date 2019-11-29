@@ -86,6 +86,20 @@ class Operator
         Copy::NAME  => Copy::class,
         Index::NAME => Index::class,
         Roll::NAME  => Roll::class,
+
+        // VariablesOperator
+        Maximum::NAME => Maximum::class,
+        Minimum::NAME => Minimum::class,
+        StreamAverage::NAME => StreamAverage::class,
+        // TODO: Dup. StreamStandardDeviation::NAME => StreamStandardDeviation::class,
+        Last::NAME => Last::class,
+        First::NAME => First::class,
+        Total::NAME => Total::class,
+        // TODO: Dup. StreamPercent::NAME => StreamPercent::class,
+        StreamPercentNan::NAME => StreamPercentNan::class,
+        LeastSquaresLineSlope::NAME => LeastSquaresLineSlope::class,
+        LeastSquaresLineIntercept::NAME => LeastSquaresLineIntercept::class,
+        LeastSquaresLineCorrelationCoefficient::NAME => LeastSquaresLineCorrelationCoefficient::class,
     ];
 
     // Not sure about this:

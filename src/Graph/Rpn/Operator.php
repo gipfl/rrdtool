@@ -47,6 +47,19 @@ class Operator
         Deg2Rad::NAME => Deg2Rad::class,
         Rad2Deg::NAME => Rad2Deg::class,
         Abs::NAME     => Abs::class,
+
+        // SetOperator (Set Operations)
+        Sort::NAME    => Sort::class,
+        Reverse::NAME => Reverse::class,
+        Average::NAME => Average::class,
+        SetMin::NAME  => SetMin::class,
+        SetMax::NAME  => SetMax::class,
+        Median::NAME  => Median::class,
+        StandardDeviation::NAME => StandardDeviation::class,
+        Percent::NAME => Percent::class,
+        Trend::NAME   => Trend::class,
+
+        // TODO: PREDICT, PREDICTSIGMA, PREDICTPERC
     ];
 
     // Not sure about this:

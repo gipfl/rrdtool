@@ -2,7 +2,7 @@
 
 namespace gipfl\RrdTool\Graph\Rpn;
 
-class ArithmeticOperator extends Operator
+abstract class ArithmeticOperator extends Operator
 {
     protected $requiredElements = 2;
 }

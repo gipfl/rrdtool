@@ -5,16 +5,24 @@ namespace gipfl\RrdTool\Graph\Instruction;
 use gipfl\RrdTool\Graph\Color;
 use InvalidArgumentException;
 
+/**
+ * Draw a filled area
+ *
+ * man rrdgraph_graph
+ * ------------------
+ * See LINE, however the area between the x-axis and the line will be filled.
+ *
+ * Synopsis
+ * --------
+ * AREA:value[#color][:[legend][:STACK][:skipscale]]
+ */
 class Area extends DefinitionBasedInstruction
 {
+    use SkipScale;
+    use Stack;
+
     /** @var Color|null */
     protected $color2;
-
-    /** @var bool */
-    protected $stack = false;
-
-    /** @var bool */
-    protected $skipScale = false;
 
     /** @var string|null */
     protected $gradientHeight;
@@ -28,6 +36,8 @@ class Area extends DefinitionBasedInstruction
     }
 
     /**
+     * If color2 is specified, the area will be filled with a gradient
+     *
      * @param Color|string $color
      * @return $this
      */
@@ -42,42 +52,6 @@ class Area extends DefinitionBasedInstruction
     }
 
     /**
-     * @return bool
-     */
-    public function isStack()
-    {
-        return $this->stack;
-    }
-
-    /**
-     * @param bool $stack
-     * @return Area
-     */
-    public function setStack($stack = true)
-    {
-        $this->stack = (bool) $stack;
-        return $this;
-    }
-
-    /**
-     * @return bool
-     */
-    public function isSkipScale()
-    {
-        return $this->skipScale;
-    }
-
-    /**
-     * @param bool $skipScale
-     * @return Area
-     */
-    public function setSkipScale($skipScale = true)
-    {
-        $this->skipScale = (bool) $skipScale;
-        return $this;
-    }
-
-    /**
      * @return string|null
      */
     public function getGradientHeight()
@@ -86,8 +60,16 @@ class Area extends DefinitionBasedInstruction
     }
 
     /**
+     * The gradheight parameter can create three different behaviors. If
+     * gradheight > 0, then the gradient is a fixed height, starting at the
+     * line going down. If gradheight < 0, then the gradient starts at a fixed
+     * height above the x-axis, going down to the x-axis. If height == 0, then
+     * the gradient goes from the line to x-axis.
+     *
+     * The default value for gradheight is 50.
+     *
      * @param string|null $gradientHeight
-     * @return Area
+     * @return $this
      */
     public function setGradientHeight($gradientHeight)
     {

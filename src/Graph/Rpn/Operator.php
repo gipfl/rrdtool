@@ -32,6 +32,21 @@ class Operator
         Multiply::NAME => Multiply::class,
         Divide::NAME   => Divide::class,
         Modulo::NAME   => Modulo::class,
+
+        Pow::NAME  => Pow::class,
+        Sin::NAME  => Sin::class,
+        Cos::NAME  => Cos::class,
+        Log::NAME  => Log::class,
+        Exp::NAME  => Exp::class,
+        Sqrt::NAME => Sqrt::class,
+
+        Atan::NAME    => Atan::class,
+        Atan2::NAME   => Atan2::class,
+        Floor::NAME   => Floor::class,
+        Ceil::NAME    => Ceil::class,
+        Deg2Rad::NAME => Deg2Rad::class,
+        Rad2Deg::NAME => Rad2Deg::class,
+        Abs::NAME     => Abs::class,
     ];
 
     // Not sure about this:

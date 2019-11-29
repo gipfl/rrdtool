@@ -7,8 +7,10 @@ namespace gipfl\RrdTool;
 
 use gipfl\RrdTool\Graph\Area;
 use gipfl\RrdTool\Graph\Color;
+use gipfl\RrdTool\Graph\HRule;
 use gipfl\RrdTool\Graph\Instruction;
 use gipfl\RrdTool\Graph\Line;
+use gipfl\RrdTool\Graph\PrintInstruction;
 
 class RrdGraph
 {
@@ -26,18 +28,25 @@ class RrdGraph
 
     protected $format = 'PNG';
 
+    /** @var Instruction[] */
     protected $instructions = [];
 
+    /** @var bool */
     protected $onlyGraph;
 
+    /** @var string */
     protected $title;
 
+    /** @var string[] */
     protected $defs = [];
 
+    /** @var string[] */
     protected $cdefs = [];
 
+    /** @var string[] */
     protected $vdefs = [];
 
+    /** @var string[] */
     protected $usedAliases = [];
 
     protected $printLabels = [];
@@ -161,7 +170,7 @@ class RrdGraph
 
     public function printDef($def, $format, $name = null)
     {
-        $this->instructions[] = "PRINT:$def:$format";
+        $this->instructions[] = new PrintInstruction($def, $format);
         $this->printLabels[] = $name === null ? $def : $name;
     }
 
@@ -299,16 +308,6 @@ class RrdGraph
         $this->add(new Line($def, $color, $legend));
     }
 
-    public function addPacketLoss($file, $dsname, $color = 'ff5566')
-    {
-        if ($file instanceof RrdFile) {
-            $file = $file->getFilename();
-        }
-        $max = $this->def($file, $dsname, 'MAX');
-        $ploss = $this->cdef("$max,100,0,IF");
-        $this->instructions[] = "AREA${ploss}#${color}:skipscale";
-    }
-
     public function addWarningRule($value, $legend = '', $color = 'ffaa44')
     {
         return $this->addHRule($value, $color, $legend);
@@ -321,7 +320,7 @@ class RrdGraph
 
     public function addHRule($value, $color, $legend = '')
     {
-        $this->instructions[] = "HRULE:${value}#${color}" . $this->optionalString($legend) . ':dashes=3,5';
+        $this->instructions[] = (new HRule($value, $color, $legend))->setDashes('3,5');
         return $this;
     }
 

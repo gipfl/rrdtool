@@ -6,7 +6,7 @@ use gipfl\Protocol\JsonRpc\Notification;
 use gipfl\Protocol\JsonRpc\PacketHandler;
 use gipfl\Protocol\JsonRpc\Request;
 use gipfl\Protocol\JsonRpc\Response;
-use gipfl\RrdTool\Graph\Shift;
+use gipfl\RrdTool\Graph\Instruction\Shift;
 use gipfl\RrdTool\GraphTemplate\TemplateLoader;
 use gipfl\RrdTool\RrdGraph;
 use gipfl\RrdTool\RrdGraphInfo;

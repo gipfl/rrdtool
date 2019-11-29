@@ -6,6 +6,7 @@ use gipfl\Protocol\JsonRpc\Notification;
 use gipfl\Protocol\JsonRpc\PacketHandler;
 use gipfl\Protocol\JsonRpc\Request;
 use gipfl\Protocol\JsonRpc\Response;
+use gipfl\RrdTool\Graph\Shift;
 use gipfl\RrdTool\GraphTemplate\TemplateLoader;
 use gipfl\RrdTool\RrdGraph;
 use gipfl\RrdTool\RrdGraphInfo;
@@ -68,6 +69,10 @@ class RpcHandler implements PacketHandler
         $onlyGraph = $packet->getParam('onlyGraph');
         if ($onlyGraph) {
             $graph->setOnlyGraph();
+        }
+
+        if ($timeShift = $packet->getParam('timeShift')) {
+            $graph->add(new Shift('timeShift', $timeShift));
         }
 
         $template = $packet->getParam('template');

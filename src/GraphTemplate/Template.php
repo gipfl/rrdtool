@@ -39,6 +39,15 @@ abstract class Template
         }
     }
 
+    protected function getArrayParam($name, $default = [])
+    {
+        if (\array_key_exists($name, $this->params)) {
+            return (array) $this->params[$name];
+        } else {
+            return $default;
+        }
+    }
+
     abstract public function applyToGraph(RrdGraph $graph);
 
     protected function addSmoke(RrdGraph $graph, $file, $dsname, $color = '0095BF', $showMaxPercentile = 100)

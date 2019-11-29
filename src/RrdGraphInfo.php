@@ -63,7 +63,7 @@ class RrdGraphInfo
                         $value = (string)$match[2];
                 }
                 $props[$ns][$relKey] = $value;
-            } elseif (preg_match('/^print\[(\d+)\]\s=\s(.+)$/', $line, $match)) {
+            } elseif (preg_match('/^print\[(\d+)]\s=\s(.+)$/', $line, $match)) {
                 $key = $this->graph->getPrintLabel($match[1]);
                 $value = $match[2];
                 if (preg_match('/^"(\d+[,.]\d+)"$/', $value, $match)) {

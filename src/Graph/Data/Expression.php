@@ -18,7 +18,8 @@ namespace gipfl\RrdTool\Graph\Data;
  * VDEF:max=ds0,MAXIMUM would scan each of the array members and store the
  * maximum value.
  *
- * ## When do you use VDEF versus CDEF?
+ * When do you use VDEF versus CDEF?
+ * ---------------------------------
  *
  * Use CDEF to transform your data prior to graphing. In the above example, we'd
  * use a CDEF to transform bytes to bits before graphing the bits.

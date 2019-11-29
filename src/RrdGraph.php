@@ -5,12 +5,12 @@ namespace gipfl\RrdTool;
 // TODO -b (--base) 1024 VS 1000 (traffic is 1000, memory 1024)
 // = do not fail for missing RRD or DS
 
-use gipfl\RrdTool\Graph\Area;
 use gipfl\RrdTool\Graph\Color;
-use gipfl\RrdTool\Graph\HRule;
-use gipfl\RrdTool\Graph\Instruction;
-use gipfl\RrdTool\Graph\Line;
-use gipfl\RrdTool\Graph\PrintInstruction;
+use gipfl\RrdTool\Graph\Instruction\Area;
+use gipfl\RrdTool\Graph\Instruction\HRule;
+use gipfl\RrdTool\Graph\Instruction\Instruction;
+use gipfl\RrdTool\Graph\Instruction\Line;
+use gipfl\RrdTool\Graph\Instruction\PrintInstruction;
 
 class RrdGraph
 {

@@ -23,7 +23,7 @@ abstract class DefinitionBasedInstruction extends Instruction
      */
     public function __construct($definition, $color = null, $legend = null)
     {
-        $this->definition = (string) $definition;
+        $this->setDefinition($definition);
         $this->setColor($color);
         $this->setLegend($legend);
     }

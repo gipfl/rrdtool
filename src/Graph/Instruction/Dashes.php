@@ -2,6 +2,11 @@
 
 namespace gipfl\RrdTool\Graph\Instruction;
 
+/**
+ * The dashes modifier enables dashed line style. Without any further
+ * options a symmetric dashed line with a segment length of 5 pixels will
+ * be drawn.
+ */
 trait Dashes
 {
     /** @var string|null */
@@ -19,6 +24,11 @@ trait Dashes
     }
 
     /**
+     * The dash pattern can be changed if the dashes= parameter is followed by
+     * either one value or an even number (1, 2, 4, 6, ...) of positive values.
+     * Each value provides the length of alternate on_s and off_s portions of
+     * the stroke.
+
      * @param string|null $dashes
      * @return $this
      */
@@ -37,6 +47,9 @@ trait Dashes
     }
 
     /**
+     * The dash-offset parameter specifies an offset into the pattern at which
+     * the stroke begins.
+     *
      * @param string|null $dashOffset
      * @return $this
      */

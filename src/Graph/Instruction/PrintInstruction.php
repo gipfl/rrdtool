@@ -60,6 +60,6 @@ class PrintInstruction extends Instruction
 
     public function render()
     {
-        return 'PRINT:' . $this->getVariableName() . $this->getFormat();
+        return 'PRINT:' . $this->getVariableName() . ':' . $this->getFormat();
     }
 }

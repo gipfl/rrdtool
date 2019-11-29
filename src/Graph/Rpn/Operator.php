@@ -77,6 +77,15 @@ class Operator
         NewYear::NAME => NewYear::class,
         Time::NAME => Time::class,
         LocalTime::NAME => LocalTime::class,
+
+        // StackOperator
+        DuplicateTopStackElement::NAME => DuplicateTopStackElement::class,
+        RemoveTopStackElement::NAME    => RemoveTopStackElement::class,
+        ExchangeTopStackElements::NAME => ExchangeTopStackElements::class,
+        Depth::NAME => Depth::class,
+        Copy::NAME  => Copy::class,
+        Index::NAME => Index::class,
+        Roll::NAME  => Roll::class,
     ];
 
     // Not sure about this:
@@ -87,6 +96,9 @@ class Operator
      * The number of elements this operator demands from the stack. If null,
      * one more element is fetched to determine the number of required elements
      * for operators allowing for a variable amount of elements
+     *
+     * TODO: This is our arity. We have operators dealing with Sets and we have
+     *       stack operators, both are a little bit... special. This needs improvement
      *
      * @var int|null
      */

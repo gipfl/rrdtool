@@ -93,7 +93,7 @@ class Line extends DefinitionBasedInstruction
             . ':'
             . $this->definition
             . $this->color
-            . $this->optionalParameter($this->string($this->getLegend()))
+            . $this::optionalParameter($this::string($this->getLegend()))
             . $this->renderStack()
             . $this->renderSkipScale()
             . $this->renderDashProperties();

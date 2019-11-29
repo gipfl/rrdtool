@@ -89,10 +89,10 @@ class Area extends DefinitionBasedInstruction
     public function render()
     {
         $string = 'AREA:'
-            . $this->definition
-            . $this->color
+            . $this->getDefinition()
+            . $this->getColor()
             . $this->color2
-            . $this->optionalParameter($this->string($this->getLegend()));
+            . $this::optionalParameter($this::string($this->getLegend()));
         if ($this->isStack()) {
             $string .= ':STACK';
         }
@@ -101,7 +101,7 @@ class Area extends DefinitionBasedInstruction
             $string .= ':skipscale';
         }
 
-        $string .= $this->optionalNamedParameter('gradheight', $this->getGradientHeight());
+        $string .= $this::optionalNamedParameter('gradheight', $this->getGradientHeight());
 
         return $string;
     }

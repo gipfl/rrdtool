@@ -11,7 +11,7 @@ class HRule extends DefinitionBasedInstruction
         return 'HRULE:'
             . $this->definition
             . $this->color
-            . $this->optionalParameter($this->string($this->getLegend()))
+            . $this::optionalParameter($this::string($this->getLegend()))
             . $this->renderDashProperties();
     }
 }

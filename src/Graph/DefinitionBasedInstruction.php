@@ -76,7 +76,7 @@ abstract class DefinitionBasedInstruction extends Instruction
      */
     public function setLegend($legend)
     {
-        $this->legend = (string) $legend;
+        $this->legend = $legend === null ? null : (string) $legend;
         return $this;
     }
 }

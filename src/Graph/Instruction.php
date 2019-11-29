@@ -11,11 +11,13 @@ abstract class Instruction
         return $this->render();
     }
 
-    protected function string($string)
+    public static function string($string)
     {
         if ($string === null || \strlen($string) === 0) {
             return null;
         }
+
+        // if alnum -> just return it as is?
 
         // TODO: Check and fix
         return "'" . \addcslashes($string, "':") . "'";
@@ -25,7 +27,7 @@ abstract class Instruction
      * @param $parameter
      * @return string
      */
-    protected function optionalParameter($parameter)
+    public static function optionalParameter($parameter)
     {
         if (\strlen($parameter)) {
             return ":$parameter";
@@ -38,7 +40,7 @@ abstract class Instruction
      * @param $parameter
      * @return string
      */
-    protected function optionalNamedParameter($parameter, $value)
+    public static function optionalNamedParameter($parameter, $value)
     {
         if (\strlen($value)) {
             return ":${parameter}=${value}";

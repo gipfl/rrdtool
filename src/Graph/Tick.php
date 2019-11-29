@@ -40,7 +40,7 @@ class Tick extends DefinitionBasedInstruction
         return 'TICK:'
             . $this->definition
             . $this->color
-            . $this->optionalParameter($this->fraction)
-            . $this->optionalParameter($this->string($this->getLegend()));
+            . $this::optionalParameter($this->fraction)
+            . $this::optionalParameter($this::string($this->getLegend()));
     }
 }

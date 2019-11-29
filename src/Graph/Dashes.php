@@ -51,9 +51,7 @@ trait Dashes
      */
     protected function renderDashProperties()
     {
-        /** @var Instruction $self */
-        $self = $this;
-        return $self->optionalNamedParameter('dashes', $this->getDashes())
-            . $self->optionalNamedParameter('dash-offset', $this->getDashOffset());
+        return Instruction::optionalNamedParameter('dashes', $this->getDashes())
+            . Instruction::optionalNamedParameter('dash-offset', $this->getDashOffset());
     }
 }

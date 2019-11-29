@@ -60,6 +60,13 @@ class Operator
         Trend::NAME   => Trend::class,
 
         // TODO: PREDICT, PREDICTSIGMA, PREDICTPERC
+
+        // SpecialValue
+        Unknown::NAME => Unknown::class,
+        NegativeInfinite::NAME => NegativeInfinite::class,
+        Previous::NAME => Previous::class,
+        // TODO: Prev(vname)
+        Count::NAME => Count::class,
     ];
 
     // Not sure about this:

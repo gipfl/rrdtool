@@ -86,16 +86,36 @@ class InterfaceGraph extends Template
         }
     }
 
+    protected function avgMinMax(RrdGraph $graph, $filename, $ds)
+    {
+        return [
+            $graph->def($filename, $ds, 'AVERAGE'),
+            $graph->def($filename, $ds, 'MIN'),
+            $graph->def($filename, $ds, 'MAX')
+        ];
+    }
+
+    protected function multiply(RrdGraph $graph, $multiplier, $def)
+    {
+        return $graph->cdef("$def,$multiplier,*");
+    }
+
+    protected function multipleMultiply(RrdGraph $graph, $multiplier, ...$def)
+    {
+        $result = [];
+        foreach ($def as $d) {
+            $result[] = $this->multiply($graph, $multiplier, $d);
+        }
+
+        return $result;
+    }
+
     public function addSmoked(RrdGraph $graph, $filename, $ds, $color, $steps = 1)
     {
         $color = new Color($color);
-        $defAvg = $graph->def($filename, $ds, 'AVERAGE');
-        $defMin = $graph->def($filename, $ds, 'MIN');
-        $defMax = $graph->def($filename, $ds, 'MAX');
-        $multiplier = $this->multiplier;
-        $defAvg = $graph->cdef("$defAvg,$multiplier,*");
-        $defMin = $graph->cdef("$defMin,$multiplier,*");
-        $defMax = $graph->cdef("$defMax,$multiplier,*");
+        list($defAvg, $defMin, $defMax) = $this->avgMinMax($graph, $filename, $ds);
+        list($defAvg, $defMin, $defMax)
+            = $this->multipleMultiply($graph, $this->multiplier, $defAvg, $defMin, $defMax);
         $avgStep = $graph->cdef("${defAvg},${defMin},-,${steps},/", 'avgstep');
         $maxStep = $graph->cdef("${defMax},${defAvg},-,${steps},/", 'maxstep');
         // TODO: class for Datasource, allow to mirror ...
@@ -103,9 +123,7 @@ class InterfaceGraph extends Template
 
     public function addBytesAsBitsPerSecond(RrdGraph $graph, $filename, $ds, $color, $negate = false)
     {
-        $defAvg = $graph->def($filename, $ds, 'AVERAGE');
-        $defMin = $graph->def($filename, $ds, 'MIN');
-        $defMax = $graph->def($filename, $ds, 'MAX');
+        list($defAvg, $defMin, $defMax) = $this->avgMinMax($graph, $filename, $ds);
         $multiplier = $this->multiplier;
         $defAvg = $graph->cdef("$defAvg,$multiplier,*");
         $defMin = $graph->cdef("$defMin,$multiplier,*");

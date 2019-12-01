@@ -85,7 +85,7 @@ class RrdGraph
     protected $watermark;
 
     /** @var bool */
-    protected $slopeMode = true;
+    protected $slopeMode = false;
 
     /** @var Color|null */
     protected $textColor;

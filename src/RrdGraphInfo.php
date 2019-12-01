@@ -17,6 +17,44 @@ class RrdGraphInfo
 
     public function getDetails(Rrdtool $rrdtool)
     {
+        $image = $this->graph->getRaw($rrdtool, true);
+        $props = $this->parseRawImage($image);
+        $props['print'] = $this->graph->translatePrintLabels($props['print']);
+        $imageString = \substr($image, $props['headerLength']);
+        static::appendImageToProps($props, $imageString, $this->graph->getFormat());
+
+        return $props;
+    }
+
+    public static function appendImageToProps(& $props, $image, $format)
+    {
+        $contentType = static::getContentTypeForFormat($format);
+        $props['raw'] = "data:$contentType;base64," . \base64_encode($image);
+        $props['format'] = \strtolower($format);
+        $props['type'] = $contentType;
+    }
+
+    public static function getContentTypeForFormat($format)
+    {
+        switch ($format) {
+            case 'SVG':
+                return 'image/svg+xml';
+            case 'PNG':
+                return 'image/png';
+            default:
+                throw new InvalidArgumentException(sprintf(
+                    'RrdGraph format %s is not supported',
+                    $format
+                ));
+        }
+    }
+
+    /**
+     * @param string $image
+     * @return array
+     */
+    public static function parseRawImage($image)
+    {
         // This is what we're going to parse:
         /*
         graph_left = 39
@@ -32,23 +70,28 @@ class RrdGraphInfo
         image = BLOB_SIZE:1229123
          */
 
-        $image = $this->graph->getRaw($rrdtool, true);
-
-        $props = [];
+        $props = [
+            'print' => [],
+        ];
         $pos = 0;
         $blobSize = null;
         while ($blobSize === null) {
-            $newLine = strpos($image, "\n", $pos);
-            $line = substr($image, $pos, $newLine - $pos);
+            $newLine = \strpos($image, "\n", $pos);
+            if ($newLine === false) {
+                throw new RuntimeException(
+                    "Unable to parse rrdgraph info, there is no more newline after char #$pos"
+                );
+            }
+            $line = \substr($image, $pos, $newLine - $pos);
             $pos = $newLine + 1;
-            if (preg_match('/^([a-z_]+)\s=\s(.+)$/', $line, $match)) {
+            if (\preg_match('/^([a-z_]+)\s=\s(.+)$/', $line, $match)) {
                 $key = $match[1];
                 if ($key === 'image') {
                     // image = BLOB_SIZE:1229123
-                    $blobSize = (int)preg_replace('/^BLOB_SIZE:/', '', $match[2]);
+                    $blobSize = (int)\preg_replace('/^BLOB_SIZE:/', '', $match[2]);
                     break;
                 } else {
-                    list($ns, $relKey) = preg_split('/_/', $key, 2);
+                    list($ns, $relKey) = \preg_split('/_/', $key, 2);
                 }
                 switch ($ns) {
                     case 'graph':
@@ -56,46 +99,32 @@ class RrdGraphInfo
                         $value = (int)$match[2];
                         break;
                     case 'value':
-                        // Hint: value is localized
-                        $value = (float)str_replace(',', '.', $match[2]);
+                        $value = static::parseLocalizedFloat($match[2]);
                         break;
                     default:
                         $value = (string)$match[2];
                 }
                 $props[$ns][$relKey] = $value;
-            } elseif (preg_match('/^print\[(\d+)]\s=\s(.+)$/', $line, $match)) {
-                $key = $this->graph->getPrintLabel($match[1]);
+            } elseif (\preg_match('/^print\[(\d+)]\s=\s(.+)$/', $line, $match)) {
+                $key = $match[1];
                 $value = $match[2];
-                if (preg_match('/^"(\d+[,.]\d+)"$/', $value, $match)) {
-                    $value = (float) str_replace(',', '.', $match[1]);
+                // TODO: what about INTs?
+                if (\preg_match('/^"?(\d+[,.]\d+)"$/', $value, $match)) {
+                    $value = static::parseLocalizedFloat($match[1]);
                 }
                 $props['print'][$key] = $value;
             } else {
                 throw new RuntimeException("Unable to parse rrdgraph info line: '$line'");
             }
         }
-        $format = $this->graph->getFormat();
-        $image = substr($image, $pos);
-        $contentType = $this->getContentType();
-        $props['raw'] = "data:$contentType;base64," . base64_encode($image);
-        $props['format'] = strtolower($format);
-        $props['type'] = $contentType;
+        $props['headerLength'] = $pos;
+        $props['imageSize'] = $blobSize;
 
         return $props;
     }
 
-    protected function getContentType()
+    public static function parseLocalizedFloat($string)
     {
-        switch ($this->graph->getFormat()) {
-            case 'SVG':
-                return 'image/svg+xml';
-            case 'PNG':
-                return 'image/png';
-            default:
-                throw new InvalidArgumentException(sprintf(
-                    'RrdGraph format %s is not supported',
-                    $this->graph->getFormat()
-                ));
-        }
+        return (float)\str_replace(',', '.', $string);
     }
 }

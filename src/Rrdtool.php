@@ -283,9 +283,16 @@ class Rrdtool
     public function getStdout()
     {
         // Strip line saying OK u:1.14 s:0.07 r:1.21
-        $lastline = substr($this->stdout, strrpos($this->stdout, "\n", -2) + 1);
-        if (substr($lastline, 0, 3) === 'OK ') {
-            return substr($this->stdout, 0, strrpos($this->stdout, "\n", -2));
+        // This can be is localized:
+        // OK u:0,02 s:0,00 r:0,01
+        // OK u:0.02 s:0.00 r:0.01
+
+        // RrdGraph used to preg_replace:
+        // /OK\su:[0-9.,]+\ss:[0-9.,]+\sr:[0-9.,]+\n$/
+
+        $lastLine = \substr($this->stdout, strrpos($this->stdout, "\n", -2) + 1);
+        if (\substr($lastLine, 0, 3) === 'OK ') {
+            return \substr($this->stdout, 0, strrpos($this->stdout, "\n", -2));
         } else {
             return $this->stdout;
         }

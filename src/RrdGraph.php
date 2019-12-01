@@ -184,6 +184,16 @@ class RrdGraph
         }
     }
 
+    public function translatePrintLabels(array $labels)
+    {
+        $result = [];
+        foreach ($labels as $key => $value) {
+            $result[$this->getPrintLabel($key)] = $value;
+        }
+
+        return $result;
+    }
+
     protected function getUniqueAlias($name)
     {
         while (isset($this->usedAliases[$name])) {
@@ -648,11 +658,7 @@ class RrdGraph
             throw new \RuntimeException($rrdtool->getError() . ' ('. $this->getCommandString($withDetails) .')');
         }
 
-        $out = $rrdtool->getStdout();
-        // This is localized!
-        // OK u:0,02 s:0,00 r:0,01
-        // OK u:0.02 s:0.00 r:0.01
-        return preg_replace('/OK\su:[0-9.,]+\ss:[0-9.,]+\sr:[0-9.,]+\n$/', '', $out);
+        return $rrdtool->getStdout();
     }
 
     public function dump(Rrdtool $rrdtool, $withDetails = false)

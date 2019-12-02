@@ -22,5 +22,5 @@ namespace gipfl\RrdTool\Graph\Data;
  */
 class CDef extends Expression
 {
-    protected $tag = 'CDEF';
+    const TAG = 'CDEF';
 }

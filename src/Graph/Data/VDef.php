@@ -25,5 +25,5 @@ namespace gipfl\RrdTool\Graph\Data;
  */
 class VDef extends Expression
 {
-    protected $tag = 'VDEF';
+    const TAG = 'VDEF';
 }

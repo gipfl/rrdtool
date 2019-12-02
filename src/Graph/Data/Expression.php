@@ -32,9 +32,9 @@ namespace gipfl\RrdTool\Graph\Data;
  * to use a CDEF again since VDEFs only look like RPN expressions, they aren't
  * really.
  */
-class Expression extends Definition
+abstract class Expression extends Definition
 {
-    protected $tag;
+    const TAG = 'INVALID';
 
     /** @var string */
     protected $expression;
@@ -65,6 +65,6 @@ class Expression extends Definition
 
     protected function render()
     {
-        return $this->tag . ':' . $this->getVariableName() . '=' . $this->getExpression();
+        return static::TAG . ':' . $this->getVariableName() . '=' . $this->getExpression();
     }
 }

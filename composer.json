@@ -19,6 +19,7 @@
     },
     "require": {
         "php": ">=5.6.0",
+        "ext-ctype": "*",
         "ext-gd": "*",
         "ext-json": "*",
         "clue/block-react": "^1.3",

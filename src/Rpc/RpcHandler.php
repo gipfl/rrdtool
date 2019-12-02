@@ -31,6 +31,10 @@ class RpcHandler implements PacketHandler
                     return 'v0.1.0';
                 case 'rrdtool.graph':
                     return $this->prepareRpnGraph($packet);
+                case 'rrdtool.recreate':
+                    return $this->recreate($packet);
+                case 'rrdtool.tune':
+                    return $this->tune($packet);
                 case 'rrdtool.calculate':
                     return $this->calculate($packet);
                 default:
@@ -39,6 +43,29 @@ class RpcHandler implements PacketHandler
         } else {
             return null;
         }
+    }
+
+    public function tune(Request $packet)
+    {
+        $rrdtool = $this->rrdtool;
+        $file = $packet->getParam('filename');
+        $tuning = $packet->getParam('tuning');
+
+        $rrdtool->run("tune $file $tuning", false);
+        if ($rrdtool->hasError()) {
+            throw new \RuntimeException($rrdtool->getError());
+        }
+
+        // string(25) "OK u:0,24 s:0,00 r:31,71 "
+        return $rrdtool->getStdout();
+    }
+
+    public function recreate(Request $packet)
+    {
+        $rrdtool = $this->rrdtool;
+        $file = $packet->getParam('filename');
+
+        return $rrdtool->recreateFile($file, true);
     }
 
     public function prepareRpnGraph(Request $packet)

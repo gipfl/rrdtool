@@ -39,6 +39,33 @@ class Rrdtool
         return $this->basedir;
     }
 
+    public function recreateFile($rrdFile, $force)
+    {
+        // [--range-check|-r] [--force-overwrite|-f]
+        // TODO: use ChildProcess
+        $cwd = getcwd();
+        chdir($this->basedir);
+        // $target = str_replace('.rrd', '_new.rrd', $rrdFile);
+        $target = $rrdFile;
+        if ($force) {
+            $force = ' --force-overwrite'; // -f
+        } else {
+            $force = '';
+        }
+        $cmd = sprintf(
+            "RRDCACHED_ADDRESS=%s %s dump '%s' | %s restore - '%s' --range-check$force",
+            $this->socket,
+            $this->rrdtool,
+            $rrdFile,
+            $this->rrdtool,
+            $target
+        );
+        $result = `$cmd`;
+        chdir($cwd);
+
+        return $result;
+    }
+
     protected function rrdProcess()
     {
         if ($this->process === null || ! is_resource($this->process)) {

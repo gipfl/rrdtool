@@ -67,4 +67,19 @@ abstract class Expression extends Definition
     {
         return static::TAG . ':' . $this->getVariableName() . '=' . $this->getExpression();
     }
+
+    public static function parseExpression($string)
+    {
+        $pos = \strpos($string, '=');
+
+        if (false === $pos) {
+            throw new \InvalidArgumentException(sprintf(
+                'Valid %s expression expected, got "%s"',
+                static::TAG,
+                $string
+            ));
+        }
+
+        return new static(\substr($string, 0, $pos), \substr($string, $pos + 1));
+    }
 }

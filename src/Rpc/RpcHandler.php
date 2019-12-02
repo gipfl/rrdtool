@@ -2,6 +2,7 @@
 
 namespace gipfl\RrdTool\Rpc;
 
+use gipfl\Protocol\JsonRpc\Error;
 use gipfl\Protocol\JsonRpc\Notification;
 use gipfl\Protocol\JsonRpc\PacketHandler;
 use gipfl\Protocol\JsonRpc\Request;
@@ -26,15 +27,39 @@ class RpcHandler implements PacketHandler
     {
         if ($packet instanceof Request) {
             switch ($packet->getMethod()) {
-                case 'rrd.version':
+                case 'rrdtool.version':
                     return 'v0.1.0';
-                case 'rrd.graph':
-                    return $this->prepareGraph($packet);
-                case 'rrd.calculate':
+                case 'rrdtool.graph':
+                    return $this->prepareRpnGraph($packet);
+                case 'rrdtool.calculate':
                     return $this->calculate($packet);
+                default:
+                    return new Error(Error::METHOD_NOT_FOUND);
             }
+        } else {
+            return null;
         }
-        return Response::forRequest($packet)->setResult('nix');
+    }
+
+    public function prepareRpnGraph(Request $packet)
+    {
+        $rrdtool = $this->rrdtool;
+        // Used to be $this->graph->getFormat()
+        $format = $packet->getParam('format'); // TODO: this duplicates command string
+        $command = $packet->getParam('command');
+
+        $rrdtool->run($command, false);
+        if ($rrdtool->hasError()) {
+            throw new \RuntimeException($rrdtool->getError());
+        }
+        $image = $rrdtool->getStdout();
+
+        $info = RrdGraphInfo::parseRawImage($image);
+        // $info['print'] = $graph->translatePrintLabels($info['print']);
+        $imageString = \substr($image, $info['headerLength']);
+        RrdGraphInfo::appendImageToProps($props, $imageString, $format);
+
+        return $props;
     }
 
     protected function calculate(Request $packet)
@@ -56,35 +81,5 @@ class RpcHandler implements PacketHandler
         $summary = new RrdSummary($this->rrdtool);
 
         return $summary->summariesForDatasources($ds, $start, $end);
-    }
-
-    protected function prepareGraph(Request $packet)
-    {
-        $graph = new RrdGraph();
-        $graph->setStart($packet->getParam('start'));
-        $graph->setEnd($packet->getParam('end'));
-        $graph->setFormat($packet->getParam('format'));
-        $graph->setWidth($packet->getParam('width'));
-        $graph->setHeight($packet->getParam('height'));
-        $onlyGraph = $packet->getParam('onlyGraph');
-        if ($onlyGraph) {
-            $graph->setOnlyGraph();
-        }
-
-        if ($timeShift = $packet->getParam('timeShift')) {
-            $graph->add(new Shift('timeShift', $timeShift));
-        }
-
-        $template = $packet->getParam('template');
-        $file = $packet->getParam('file');
-
-        $loader = new TemplateLoader();
-        $template = $loader->load($template, $file);
-        $template->setParams((array) $packet->getParams());
-        $template->applyToGraph($graph);
-
-        $info = new RrdGraphInfo($graph);
-
-        return $info->getDetails($this->rrdtool);
     }
 }

@@ -47,7 +47,7 @@ class RpcDaemon
             $session = new RpcSession($connection);
             $session->getConnection()
                 ->setNamespaceSeparator('.')
-                ->setHandler(new RpcHandler($this->rrdtool), 'rrd');
+                ->setHandler(new RpcHandler($this->rrdtool), 'rrdtool');
 
             $connection->on('close', function () use ($session, $connection) {
                 Logger::debug('Closing RPC session for ' . $connection->getRemoteAddress());

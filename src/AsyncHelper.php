@@ -104,7 +104,7 @@ trait AsyncHelper
 
     protected function showAsyncError(Exception $e)
     {
-        if ($this instanceof \gipfl\IcingaWeb2\ControlsAndContent) {
+        if ($this instanceof \gipfl\IcingaWeb2\Widget\ControlsAndContent) {
             $this->content()->add(\ipl\Html\Error::show($e));
         } else {
             echo $e->getMessage() . "\n";

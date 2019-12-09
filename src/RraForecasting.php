@@ -106,6 +106,16 @@ class RraForecasting extends Rra
     }
 
     /**
+     * TODO: Check whether this really applies to forecasting RRAs
+     *
+     * @return int
+     */
+    public function getDataSize()
+    {
+        return $this->rows * static::BYTES_PER_DATAPOINT;
+    }
+
+    /**
      * xff:steps:rows
      * @param $str
      */

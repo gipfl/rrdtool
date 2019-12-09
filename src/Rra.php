@@ -6,6 +6,8 @@ use InvalidArgumentException;
 
 abstract class Rra
 {
+    const BYTES_PER_DATAPOINT = 8;
+
     protected $consolidationFunction;
 
     /** @var int|null */
@@ -17,6 +19,13 @@ abstract class Rra
     }
 
     abstract public function toString();
+
+    /**
+     * Data Size used on disk
+     *
+     * @return int
+     */
+    abstract public function getDataSize();
 
     public function __toString()
     {

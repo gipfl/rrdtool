@@ -49,6 +49,11 @@ class RraAggregation extends Rra
         $this->rows = $info['rows'];
     }
 
+    public function getDataSize()
+    {
+        return $this->rows * static::BYTES_PER_DATAPOINT;
+    }
+
     public function toString()
     {
         return 'RRA:' . \implode(':', [

@@ -2,6 +2,7 @@
 
 namespace gipfl\RrdTool\Rpc;
 
+use gipfl\RrdTool\RrdCached\Client;
 use gipfl\RrdTool\Rrdtool;
 use Icinga\Application\Logger;
 use React\EventLoop\Factory as Loop;
@@ -20,9 +21,13 @@ class RpcDaemon
     /** @var Rrdtool */
     protected $rrdtool;
 
-    public function __construct(Rrdtool $rrdtool)
+    /** @var Client */
+    protected $client;
+
+    public function __construct(Rrdtool $rrdtool, Client $client)
     {
         $this->rrdtool = $rrdtool;
+        $this->client = $client;
     }
 
     public function run()

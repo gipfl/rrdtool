@@ -53,7 +53,7 @@ class Tick extends DefinitionBasedInstruction
 
     protected function renderFraction()
     {
-        return $this->fraction === null ? '' : \sprintf('%.3G', $this->fraction);
+        return $this->fraction === null ? '' : $this->renderFloat($this->fraction);
     }
 
     public function render()

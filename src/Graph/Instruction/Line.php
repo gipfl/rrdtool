@@ -51,7 +51,7 @@ class Line extends DefinitionBasedInstruction
         // > Should you want to use STACK, use the "LINEx:<value>::STACK"
         // > form.
 
-        return sprintf('LINE%.3G:', $this->getWidth())
+        return sprintf('LINE%s:', $this->renderFloat($this->getWidth()))
             . $this->getDefinition()
             . $this->getColor()
             . $this::optionalParameter($this::string($this->getLegend()))

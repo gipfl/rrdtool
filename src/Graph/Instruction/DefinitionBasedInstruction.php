@@ -81,4 +81,15 @@ abstract class DefinitionBasedInstruction extends Instruction
         $this->legend = $legend === null ? null : (string) $legend;
         return $this;
     }
+
+    protected function renderFloat($number)
+    {
+        if (\is_int($number)) {
+            return (string) $number;
+        } elseif (\ctype_digit($number)) {
+            return (string) (int) $number;
+        } else {
+            return \rtrim(\sprintf('%.6F', $number), 0);
+        }
+    }
 }

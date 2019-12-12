@@ -97,4 +97,11 @@ abstract class Template
         $avgCdef = $graph->cdef("$avgDef$multi");
         $graph->add(new Line($avgCdef, new Color($color)));
     }
+
+    protected function showTrend(RrdGraph $graph, $def, $time = 3600, $color = '#0095BF')
+    {
+        $trend = $graph->cdef("$def,$time,TRENDNAN", 'trend_smoothed');
+        $trendLine = new Line($trend, $color);
+        $graph->add($trendLine->setWidth(0.5));
+    }
 }

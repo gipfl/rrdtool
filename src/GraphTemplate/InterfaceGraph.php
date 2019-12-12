@@ -128,7 +128,7 @@ class InterfaceGraph extends Template
         $defAvg = $graph->cdef("$defAvg,$multiplier,*");
         $defMin = $graph->cdef("$defMin,$multiplier,*");
         $defMax = $graph->cdef("$defMax,$multiplier,*");
-        $steps = 1;
+        $steps = 1; // One step only, otherwise image get's overloaded. We might want to drop this
         $avgStep = $graph->cdef("${defAvg},${defMin},-,${steps},/", 'avgstep');
         $maxStep = $graph->cdef("${defMax},${defAvg},-,${steps},/", 'maxstep');
 
@@ -140,10 +140,15 @@ class InterfaceGraph extends Template
         }
 
         $graph->add((new HRule(0, $graph->getTextColor()->setAlphaHex('80'))));
-        $showAllMaxValues = false;
+        $showAllMaxValues = true;
 
         // empty unless min
-        $graph->add((new Area($defMin))->setSkipScale());
+        $min = new Area($defMin);
+        if (! $showAllMaxValues) {
+            // TODO: Check this:
+            $min->setSkipScale();
+        }
+        $graph->add($min);
         $grad = (80 / $steps);
 
         $stepColor = new Color($color);

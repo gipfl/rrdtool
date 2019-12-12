@@ -90,6 +90,8 @@ class RrdGraph
     /** @var Color|null */
     protected $textColor;
 
+    protected $disableCached = false;
+
     /**
      * @return int
      */
@@ -457,6 +459,13 @@ class RrdGraph
         return array_merge($instructions, $this->instructions);
     }
 
+    public function disableCached($disable = true)
+    {
+        $this->disableCached = $disable;
+
+        return $this;
+    }
+
     protected function getMainParams()
     {
         $blue = '#0095BF'; // @icinga-blue
@@ -525,6 +534,10 @@ class RrdGraph
         if ($this->drawOnlyGraph()) {
              $params[] = '--only-graph';
              $params[] = '--color CANVAS#ffffff00';
+        }
+
+        if ($this->disableCached) {
+            $params['--daemon'] = "''";
         }
 
         return $params;

@@ -4,9 +4,10 @@ namespace gipfl\RrdTool\RrdCached;
 
 use Exception;
 use gipfl\RrdTool\RrdInfo;
-// use Icinga\Application\Logger;
 use React\EventLoop\LoopInterface;
 use React\Promise\Deferred;
+use React\Promise\FulfilledPromise;
+use function React\Promise\resolve;
 use function React\Promise\Timer\timeout;
 use React\Socket\ConnectionInterface;
 use React\Socket\UnixConnector;
@@ -34,6 +35,8 @@ class Client
 
     protected $bufferLines = [];
 
+    protected $availableCommands;
+
     public function __construct($socketFile, LoopInterface $loop)
     {
         $this->socketFile = $socketFile;
@@ -58,7 +61,7 @@ class Client
      * ];
      * </code>
      *
-     * @return \React\Promise\Promise
+     * @return \React\Promise\ExtendedPromiseInterface
      */
     public function stats()
     {
@@ -88,7 +91,7 @@ class Client
      * </code>
      *
      * @param string|array $commands
-     * @return \React\Promise\Promise
+     * @return \React\Promise\ExtendedPromiseInterface
      */
     public function batch($commands)
     {
@@ -116,9 +119,10 @@ class Client
             $commands = \rtrim($commands, "\n") . "\n.";
         }
 
+        // BATCH gives: 0 Go ahead.  End with dot '.' on its own line.
         $this->currentBatch = $this->send('BATCH')->then(function ($result) use ($commands) {
             return $this->send($commands)->then(function ($result) {
-                if ($result === 'errors') {
+                if ($result === 'errors' || $result === true) { // TODO: either one or the other
                     // Was: '0 errors'
                     return true;
                 } elseif (\is_string($result)) {
@@ -154,7 +158,7 @@ class Client
      * This doesn't mean that all files have been flushed, but that FLUSHALL has
      * successfully been started.
      *
-     * @return \React\Promise\Promise
+     * @return \React\Promise\ExtendedPromiseInterface
      */
     public function flushAll()
     {
@@ -167,7 +171,7 @@ class Client
     /**
      * When resolved usually returns 'PONG'
      *
-     * @return \React\Promise\Promise
+     * @return \React\Promise\ExtendedPromiseInterface
      */
     public function ping()
     {
@@ -183,6 +187,10 @@ class Client
         });
     }
 
+    /**
+     * @param $file
+     * @return \React\Promise\ExtendedPromiseInterface
+     */
     public function last($file)
     {
         $file = $this->quoteFilename($file);
@@ -206,6 +214,10 @@ class Client
         });
     }
 
+    /**
+     * @param $file
+     * @return \React\Promise\ExtendedPromiseInterface
+     */
     public function forget($file)
     {
         $file = $this->quoteFilename($file);
@@ -221,7 +233,7 @@ class Client
 
     /**
      * @param $file
-     * @return \React\Promise\Promise
+     * @return \React\Promise\ExtendedPromiseInterface
      */
     public function flushAndForget($file)
     {
@@ -235,7 +247,6 @@ class Client
     public function pending($file)
     {
         $file = $this->quoteFilename($file);
-
         return $this->send("PENDING $file")->then(function ($result) {
             if (is_array($result)) {
                 return $result;
@@ -250,12 +261,16 @@ class Client
 
     public function info($file)
     {
+        return $this->rawInfo($file)->then(function ($result) {
+            return RrdInfo::parseCachedLines($result);
+        });
+    }
+
+    public function rawInfo($file)
+    {
         $file = $this->quoteFilename($file);
 
-        return $this->send("INFO $file")->then(function ($result) {
-            // return $result;
-            return RrdInfo::parseCachedLines($result) + ['full' => $result];
-        });
+        return $this->send("INFO $file");
     }
 
     protected function quoteFilename($filename)
@@ -263,6 +278,32 @@ class Client
         // TODO: do we need to escape/quote here?
         return $filename;
         return "'" . addcslashes($filename, "'") . "'";
+    }
+
+    public function listAvailableCommands()
+    {
+        // This doesn't work!?
+        // if ($this->availableCommands !== null) {
+        //     return resolve($this->availableCommands);
+        // }
+
+        return $this->availableCommands = $this->send("HELP")->then(function ($result) {
+            $result = \array_map(static function ($value) {
+                return \preg_replace('/\s.+$/', '', $value);
+            }, $result);
+            \sort($result);
+
+            return $result;
+        });
+    }
+
+    public function hasCommand($commandName)
+    {
+        return $this
+            ->listAvailableCommands()
+            ->then(function ($commands) use ($commandName) {
+                return \in_array($commandName, $commands);
+            });
     }
 
     public function listRecursive($directory = '/')
@@ -291,7 +332,7 @@ class Client
 
         $command = \rtrim($command, "\n") . "\n";
 
-        // foreach (preg_split('/\r\n/', "$command") as $l) {
+        // foreach (\preg_split('/\r\n/', "$command") as $l) {
         //     echo "> $l\n";
         // }
         if ($this->connection === null) {
@@ -310,24 +351,26 @@ class Client
 
         // Hint: used to be 5s, too fast?
         return timeout($deferred->promise(), 30, $this->loop);
-
-//         return $deferred->promise();
     }
 
     protected function connect()
     {
+        $this->availableCommands = null;
         $connector = new UnixConnector($this->loop);
 
         $attempt = $connector->connect($this->socketFile)->then(function (ConnectionInterface $connection) {
             $connection->on('end', function () {
                 // Logger::info('RRDCacheD Client ended');
+                $this->connection = null;
             });
             $connection->on('error', function (\Exception $e) {
                 // Logger::error('RRDCacheD Client error: ' . $e->getMessage());
+                $this->connection = null;
             });
 
             $connection->on('close', function () {
                 // Logger::info('RRDCacheD Client closed');
+                $this->connection = null;
             });
 
             $this->connection = $connection;
@@ -392,12 +435,18 @@ class Client
                     if (empty($this->pending)) {
                         $this->failForProtocolViolation();
                     }
+
                     \array_shift($this->bufferLines);
-                    $this->resolveNextPending(\substr($current, $pos + 1));
+                    $result = \substr($current, $pos + 1);
+                    if ($result === 'errors') { // Output: 0 errors
+                        $result = true;
+                    }
+                    $this->resolveNextPending($result);
 
                     continue;
                 }
                 if (\count($this->bufferLines) <= $cntLines) {
+                    // We'll wait, there are more lines to come
                     return;
                 }
 
@@ -421,6 +470,9 @@ class Client
 
     protected function resolveNextPending($result)
     {
+        if (empty($this->pending)) {
+            $this->failForProtocolViolation();
+        }
         $next = \array_shift($this->pending);
         $next->resolve($result);
     }

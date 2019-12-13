@@ -16,6 +16,21 @@ class DsInfo
 
     public $max;
 
+    /**
+     * https://stackoverflow.com/questions/41373910/what-is-rrd-last-ds
+     *
+     * The last received value of this DS, prior to calculation of Rate, at last_update time
+     * When a new update comes in with a new DS value, this is used to create the new value
+     * for the update interval...
+     *
+     * new_value = ( new_ds - last_ds ) / ( current_time - last_update )
+     *
+     * ...and this is then assigned to one (or more) Intervals (according to Data Normalisation)
+     * in order to be able to set values in the various RRAs.
+     *
+     * last_ds is different from value as it is before rate calculations and normalisation.
+     * @var string|null
+     */
     public $lastDs;
 
     public $value;

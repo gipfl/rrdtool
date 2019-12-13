@@ -494,20 +494,13 @@ class RrdGraph
             // '--force-rules-legend',
             // '--right-axis 1:0',
             // '--daemon' => '127.0.0.1:...', // triggers flush
-            '--color BACK#ffffff00',
-            "--color CANVAS${blue}00",
-            "--color GRID${blue}10",
-            "--color MGRID${blue}33",
-            "--color ARROW${blue}00",
-            "--color AXIS${blue}00",
-            "--color FONT${textColor}",
             '--grid-dash' => $this->gridDash,
             '--slope-mode' => $this->slopeMode,
             '--disable-rrdtool-tag' => ! $this->isRrdToolTagEnabled(),
             //'--font DEFAULT:0:UbuntuMono --font AXIS:7:UbuntuMono',
             // "--font DEFAULT:0:UbuntuMono --font AXIS:$gridFontSize:UbuntuMono",
             "--font DEFAULT:0:$fontFamily --font AXIS:$gridFontSize:$fontFamily",
-            // '--font-render-mode' => 'light', // light, mono
+            // '--font-render-mode' => 'light', // normal, light, mono
             // '-y none',
             // '-x none',
             // '--zoom' => 4,
@@ -522,14 +515,31 @@ class RrdGraph
             // '--x-grid none',
             // '--x-grid MINUTE:10:HOUR:1:HOUR:4:0:%X',
             // '--x-grid HOUR:8:DAY:1:DAY:1:86400:%A',
+            '--units-length' => '4', // Space on the left side, reserved for Y axis
+            // '--units=si',
+            // '-y none',
             '--left-axis-formatter' => $this->leftAxisFormatter,
             "--week-fmt 'KW %W'", // TODO: translate? %V, %U
             // '--base 1024', // memory
             // '--base 1000', // traffic
+
             '--lower-limit' => $this->getLowerLimit(),
             '--upper-limit' => $this->getUpperLimit(),
             '-Z' => $this->useNanForAllMissingData, // Do not fail on missing DS
         ];
+
+        $colors = [
+            'BACK'   => '#ffffff00',
+            'CANVAS' => "${blue}00",
+            'GRID'   => "${blue}00",
+            'MGRID'  => "${blue}33",
+            'ARROW'  => "${blue}00",
+            'AXIS'   => "${blue}00",
+            'FONT'   => "${textColor}",
+        ];
+        foreach ($colors as $target => $color) {
+            $params[] = "--color $target$color";
+        }
 
         if ($this->drawOnlyGraph()) {
              $params[] = '--only-graph';

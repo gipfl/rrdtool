@@ -6,6 +6,10 @@ use InvalidArgumentException;
 
 class RrdInfo
 {
+    const FORMAT_RRDTOOL = 1;
+
+    const FORMAT_RRDCACHED = 2;
+
     /** @var string */
     protected $filename;
 
@@ -68,7 +72,7 @@ class RrdInfo
     }
 
     /**
-     * @return mixed
+     * @return DsInfo[]
      */
     public function getDsInfo()
     {
@@ -91,12 +95,82 @@ class RrdInfo
         return \count($this->dsInfo);
     }
 
+    public function getHeaderSize()
+    {
+        return $this->headerSize;
+    }
+
     /**
      * @return int
      */
     public function getDataSize()
     {
         return $this->rra->getDataSize() * $this->countDataSources();
+    }
+
+    /**
+     * @param $string
+     * @return static
+     */
+    public static function parse($string)
+    {
+        return static::parseLines(\preg_split('/\n/', $string, -1, PREG_SPLIT_NO_EMPTY));
+    }
+
+    /**
+     * @param array $lines
+     * @return static
+     */
+    public static function parseLines(array $lines)
+    {
+        return static::instanceFromParsedStructure(static::prepareStructure(
+            $lines
+        ));
+    }
+
+    protected static function detectLineFormat($line)
+    {
+        return false === \strpos($line, ' = ')
+            ? self::FORMAT_RRDCACHED
+            : self::FORMAT_RRDTOOL;
+    }
+
+    /**
+     * @param array $lines
+     * @return array
+     */
+    protected static function prepareStructure(array $lines)
+    {
+        $result = [];
+        if (empty($lines)) {
+            throw new \RuntimeException('Got no info lines to parse');
+        }
+        $format = static::detectLineFormat($lines[0]);
+        foreach ($lines as $line) {
+            if ($format === self::FORMAT_RRDCACHED) {
+                list($key, $value) = static::splitKeyValueFromRrdCached($line);
+            } else {
+                list($key, $value) = static::splitKeyValueFromRrdTool($line);
+            }
+            static::setArrayValue($result, $key, $value);
+        }
+
+        return $result;
+    }
+
+    protected static function instanceFromParsedStructure(array $array)
+    {
+        $self = new static(
+            $array['filename'],
+            $array['step'],
+            self::dsInfoFromArray($array['ds']),
+            self::rraInfoFromArray($array['rra'])
+        );
+        $self->rrdVersion = $array['rrd_version'];
+        $self->lastUpdate = $array['last_update'];
+        $self->headerSize = $array['header_size'];
+
+        return $self;
     }
 
     /**
@@ -125,97 +199,14 @@ class RrdInfo
         return $value;
     }
 
-    public static function parseRrdToolOutput($info)
-    {
-        return static::parseLines(\preg_split('/\n/', $info, -1, PREG_SPLIT_NO_EMPTY));
-    }
-
-    public static function parseLines($lines)
-    {
-        $res = [];
-        foreach ($lines as $line) {
-            // rrdtool info:
-            if (false === strpos($line, ' = ')) {
-                // info via rrdcached
-                list($key, $val) = static::splitKeyValueFromRrdCached($line);
-            } else {
-                list($key, $val) = \explode(' = ', $line);
-            }
-
-            if (false === ($bracket = \strpos($key, '['))) {
-                $res[$key] = self::parseValue($val);
-            } else {
-                $type = \substr($key, 0, $bracket);
-                $key = \substr($key, $bracket + 1);
-                $bracket = \strpos($key, ']');
-                if ($bracket === false) {
-                    throw new \RuntimeException('Missing right bracket: ' . $line);
-                }
-                $idx = \substr($key, 0, $bracket);
-                $key = \substr($key, $bracket + 2);
-
-                // No nesting support, e.g. ignore rra[0].cdp_prep[0].value
-                // We also need inf/-inf support before allowing them
-                if (false !== \strpos($key, '[')) {
-                    continue;
-                }
-
-                $res[$type][$idx][$key] = self::parseValue($val);
-            }
-        }
-
-        $self = new static(
-            $res['filename'],
-            $res['step'],
-            self::dsInfoFromArray($res['ds']),
-            self::rraInfoFromArray($res['rra'])
-        );
-        $self->rrdVersion = $res['rrd_version'];
-        $self->lastUpdate = $res['last_update'];
-        $self->headerSize = $res['header_size'];
-
-        return $self;
-    }
-
-    public static function parseCachedLines($lines)
-    {
-        $res = [];
-        foreach ($lines as $line) {
-            list($key, $val) = static::splitKeyValueFromRrdCached($line);
-
-            if (false === ($bracket = \strpos($key, '['))) {
-                $res[$key] = $val;
-            } else {
-                $type = \substr($key, 0, $bracket);
-                $key = \substr($key, $bracket + 1);
-                $bracket = \strpos($key, ']');
-                if ($bracket === false) {
-                    throw new \RuntimeException('Missing right bracket: ' . $line);
-                }
-                $idx = \substr($key, 0, $bracket);
-                $key = \substr($key, $bracket + 2);
-
-                // No nesting support, e.g. ignore rra[0].cdp_prep[0].value
-                // We also need inf/-inf support before allowing them
-                if (false !== \strpos($key, '[')) {
-                    continue;
-                }
-
-                $res[$type][$idx][$key] = $val; // self::parseValue($val);
-            }
-        }
-
-        return $res;
-    }
-
     protected static function dsInfoFromArray($info)
     {
-        $dsInfo = [];
+        $result = [];
         foreach ($info as $name => $dsInfo) {
-            $dsInfo[$name] = DsInfo::fromArray($name, $dsInfo);
+            $result[$name] = DsInfo::fromArray($name, $dsInfo);
         }
 
-        return $dsInfo;
+        return $result;
     }
 
     protected static function rraInfoFromArray($info)
@@ -237,6 +228,12 @@ class RrdInfo
         } else {
             return false;
         }
+    }
+
+    protected static function splitKeyValueFromRrdTool($line)
+    {
+        list($key, $val) = \explode(' = ', $line);
+        return [$key, self::parseValue($val)];
     }
 
     protected static function splitKeyValueFromRrdCached($line)
@@ -270,5 +267,29 @@ class RrdInfo
         }
 
         return [$key, $val];
+    }
+
+    protected static function setArrayValue(array &$array, $key, $value)
+    {
+        if (false === ($bracket = \strpos($key, '['))) {
+            $array[$key] = $value;
+        } else {
+            $type = \substr($key, 0, $bracket);
+            $key = \substr($key, $bracket + 1);
+            $bracket = \strpos($key, ']');
+            if ($bracket === false) {
+                throw new \RuntimeException('Missing right bracket in key: ' . $key);
+            }
+            $idx = \substr($key, 0, $bracket);
+            $key = \substr($key, $bracket + 2);
+
+            // No nesting support, e.g. ignore rra[0].cdp_prep[0].value
+            // We also need inf/-inf support before allowing them
+            if (false !== \strpos($key, '[')) {
+                return;
+            }
+
+            $array[$type][$idx][$key] = $value;
+        }
     }
 }

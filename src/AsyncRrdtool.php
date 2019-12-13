@@ -61,7 +61,7 @@ class AsyncRrdtool
     public function info($filename)
     {
         return $this->send("info $filename")->then(function ($result) {
-            return RrdInfo::parseRrdToolOutput($result);
+            return RrdInfo::parse($result);
         });
     }
 

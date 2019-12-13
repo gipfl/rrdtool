@@ -4,7 +4,7 @@ namespace gipfl\RrdTool;
 
 class Ds
 {
-    /** @var string */
+    /** @var string ds-name must be 1 to 19 characters long, allowed chars: [a-zA-Z0-9_] */
     protected $name;
 
     /** @var int */

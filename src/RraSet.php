@@ -81,6 +81,7 @@ class RraSet
         'RRA:MIN:0.5:21600:5840'
     ];
 
+    /** @var Rra[] */
     protected $rras = [];
 
     public function __construct($rras)
@@ -96,17 +97,25 @@ class RraSet
 
     public static function fromString($str)
     {
-        return new static(preg_split('/ /', $str));
+        return new static(\preg_split('/ /', $str));
     }
 
     public function toString()
     {
-        return implode(' ', $this->rras);
+        return \implode(' ', $this->rras);
     }
 
-    public static function fromRrdInfo(RrdInfo $info)
+    /**
+     * @return int
+     */
+    public function getDataSize()
     {
-//        print_r($info->);
+        $size = 0;
+        foreach ($this->rras as $rra) {
+            $size += $rra->getDataSize();
+        }
+
+        return $size;
     }
 
     public static function faster()

@@ -21,17 +21,22 @@ class RrdInfo
     /** @var int|null */
     protected $lastUpdate;
 
+    /** @var DsInfo[] */
     protected $dsInfo;
 
     /** @var RraSet */
     protected $rra;
 
-    protected function __construct()
+    protected function __construct($filename, $step, array $dsInfo, RraSet $rra)
     {
+        $this->filename = $filename;
+        $this->step = $step;
+        $this->dsInfo = $dsInfo;
+        $this->rra = $rra;
     }
 
     /**
-     * @return mixed
+     * @return string
      */
     public function getFilename()
     {
@@ -39,7 +44,7 @@ class RrdInfo
     }
 
     /**
-     * @return mixed
+     * @return string
      */
     public function getRrdVersion()
     {
@@ -47,7 +52,7 @@ class RrdInfo
     }
 
     /**
-     * @return mixed
+     * @return int
      */
     public function getStep()
     {
@@ -55,7 +60,7 @@ class RrdInfo
     }
 
     /**
-     * @return mixed
+     * @return int|null
      */
     public function getLastUpdate()
     {
@@ -71,13 +76,33 @@ class RrdInfo
     }
 
     /**
-     * @return mixed
+     * @return RraSet
      */
     public function getRraSet()
     {
         return $this->rra;
     }
 
+    /**
+     * @return int
+     */
+    public function countDataSources()
+    {
+        return \count($this->dsInfo);
+    }
+
+    /**
+     * @return int
+     */
+    public function getDataSize()
+    {
+        return $this->rra->getDataSize() * $this->countDataSources();
+    }
+
+    /**
+     * @param $value
+     * @return bool|float|int|string|null
+     */
     protected static function parseValue($value)
     {
         if ($value === 'NaN') {
@@ -92,13 +117,12 @@ class RrdInfo
             return (int) $value;
         }
 
-        // NONONONO. Quick workaround for localized numbers
-        $value = \str_replace(',', '.', $value);
-        if (\is_numeric($value)) {
-            return (float) $value;
+        $value = self::eventuallyParseFloat($value);
+        if ($value === false) {
+            throw new InvalidArgumentException($value . ' is not a known data type');
         }
 
-        throw new InvalidArgumentException($value . ' is not a known data type');
+        return $value;
     }
 
     public static function parseRrdToolOutput($info)
@@ -112,26 +136,8 @@ class RrdInfo
         foreach ($lines as $line) {
             // rrdtool info:
             if (false === strpos($line, ' = ')) {
-                // info via rrdcached:
-                if (\preg_match('/^(.+)\s([012])\s(.+)$/', $line, $match)) {
-                    $key = $match[1];
-                    switch ($match[2]) {
-                        case '0': // float
-                            $val = 1;// (float) $match[3];
-                            break;
-                        case '1': // int
-                            $val = (int) $match[3];
-                            break;
-                        case '2': // string
-                            $val = 3; //$match[3];
-                            break;
-                        default:
-                            // Will not happen, however IDE complains :-/
-                            $val = null;
-                    }
-                } else {
-                    continue;
-                }
+                // info via rrdcached
+                list($key, $val) = static::splitKeyValueFromRrdCached($line);
             } else {
                 list($key, $val) = \explode(' = ', $line);
             }
@@ -143,8 +149,8 @@ class RrdInfo
                 $key = \substr($key, $bracket + 1);
                 $bracket = \strpos($key, ']');
                 if ($bracket === false) {
-                    continue;
-                } // WTF? TODO: Log.
+                    throw new \RuntimeException('Missing right bracket: ' . $line);
+                }
                 $idx = \substr($key, 0, $bracket);
                 $key = \substr($key, $bracket + 2);
 
@@ -158,18 +164,15 @@ class RrdInfo
             }
         }
 
-        $self = new static();
-        $self->filename   = $res['filename'];
+        $self = new static(
+            $res['filename'],
+            $res['step'],
+            self::dsInfoFromArray($res['ds']),
+            self::rraInfoFromArray($res['rra'])
+        );
         $self->rrdVersion = $res['rrd_version'];
-        $self->step       = $res['rrd_version'];
         $self->lastUpdate = $res['last_update'];
         $self->headerSize = $res['header_size'];
-        $self->dsInfo     = $res['ds'];
-        $rraSet = [];
-        foreach ($res['rra'] as $rra) {
-            $rraSet[] = Rra::fromRraInfo($rra);
-        }
-        $self->rra = new RraSet($rraSet);
 
         return $self;
     }
@@ -178,33 +181,7 @@ class RrdInfo
     {
         $res = [];
         foreach ($lines as $line) {
-            if (\preg_match('/^(.+)\s([012])\s(.+)$/', $line, $match)) {
-                $key = $match[1];
-                switch ($match[2]) {
-                    case '0': // float
-                        if ($match[3] === 'NaN') {
-                            $val = null;
-                        } else {
-                            $val = (float) $match[3];
-                        }
-                        break;
-                    case '1': // int
-                        if ($match[3] === 'NaN') {
-                            $val = null;
-                        } else {
-                            $val = (int) $match[3];
-                        }
-                        break;
-                    case '2': // string
-                        $val = $match[3];
-                        break;
-                    default:
-                        // Will not happen, however IDE complains :-/
-                        $val = null;
-                }
-            } else {
-                throw new \RuntimeException('Invalid info line: ' . $line);
-            }
+            list($key, $val) = static::splitKeyValueFromRrdCached($line);
 
             if (false === ($bracket = \strpos($key, '['))) {
                 $res[$key] = $val;
@@ -229,5 +206,69 @@ class RrdInfo
         }
 
         return $res;
+    }
+
+    protected static function dsInfoFromArray($info)
+    {
+        $dsInfo = [];
+        foreach ($info as $name => $dsInfo) {
+            $dsInfo[$name] = DsInfo::fromArray($name, $dsInfo);
+        }
+
+        return $dsInfo;
+    }
+
+    protected static function rraInfoFromArray($info)
+    {
+        $rraSet = [];
+        foreach ($info as $rra) {
+            $rraSet[] = Rra::fromRraInfo($rra);
+        }
+
+        return new RraSet($rraSet);
+    }
+
+    protected static function eventuallyParseFloat($value)
+    {
+        // dirty workaround for localized numbers
+        $value = \str_replace(',', '.', $value);
+        if (\is_numeric($value)) {
+            return (float) $value;
+        } else {
+            return false;
+        }
+    }
+
+    protected static function splitKeyValueFromRrdCached($line)
+    {
+        if (\preg_match('/^(.+?)\s([012])\s(.+)$/', $line, $match)) {
+            $key = $match[1];
+            switch ($match[2]) {
+                case '0': // float
+                    if ($match[3] === 'NaN') {
+                        $val = null;
+                    } else {
+                        $val = (float) $match[3];
+                    }
+                    break;
+                case '1': // int
+                    if ($match[3] === 'NaN') {
+                        $val = null;
+                    } else {
+                        $val = (int) $match[3];
+                    }
+                    break;
+                case '2': // string
+                    $val = $match[3];
+                    break;
+                default:
+                    // This is impossible because of the above regex, but makes our IDE happy:
+                    throw new \RuntimeException("You should never reach this point");
+            }
+        } else {
+            throw new \RuntimeException("Got invalid info line from RRDcached: $line");
+        }
+
+        return [$key, $val];
     }
 }

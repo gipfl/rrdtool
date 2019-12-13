@@ -34,11 +34,6 @@ class Ds
         return new static($name, $type, $heartbeat, $min, $max);
     }
 
-    public static function createWithPnpDefault($name, $type)
-    {
-        return new static($name, $type, 8640);
-    }
-
     /**
      * @return string
      */

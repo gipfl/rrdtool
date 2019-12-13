@@ -49,6 +49,21 @@ class RraAggregation extends Rra
         $this->rows = $info['rows'];
     }
 
+    public function getRows()
+    {
+        return $this->rows;
+    }
+
+    public function getSteps()
+    {
+        return $this->steps;
+    }
+
+    public function getXFilesFactor()
+    {
+        return $this->xFilesFactor;
+    }
+
     public function getDataSize()
     {
         return $this->rows * static::BYTES_PER_DATAPOINT;

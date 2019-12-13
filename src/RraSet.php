@@ -23,6 +23,11 @@ class RraSet
         return new static(\preg_split('/ /', $str));
     }
 
+    public function getRras()
+    {
+        return $this->rras;
+    }
+
     public function toString()
     {
         return \implode(' ', $this->rras);
@@ -39,5 +44,25 @@ class RraSet
         }
 
         return $size;
+    }
+
+    public function getIndexForLongestRra()
+    {
+        $maxPdp = 0;
+        $rraIdx = 0;
+        // $oldestPossible = 0;
+        /** @var Rra $rra */
+        foreach ($this->rras as $idx => $rra) {
+            // TODO: what about RraForecasting?
+            if ($rra instanceof RraAggregation) {
+                $curPdp = $rra->getRows() * $rra->getSteps();
+                if ($curPdp > $maxPdp) {
+                    $maxPdp = $curPdp;
+                    $rraIdx = $idx;
+                }
+            }
+        }
+
+        return $rraIdx;
     }
 }

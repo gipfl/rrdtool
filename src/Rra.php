@@ -27,6 +27,11 @@ abstract class Rra
      */
     abstract public function getDataSize();
 
+    public function getConsolidationFunction()
+    {
+        return $this->consolidationFunction;
+    }
+
     public function __toString()
     {
         return $this->toString();

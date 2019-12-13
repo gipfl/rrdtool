@@ -112,7 +112,7 @@ class Rrdtool
         $this->errorMsg = null;
         $env = $this->getEnv();
 
-        $rrdtool = sprintf('%s - ', $this->rrdtool);
+        $rrdtool = sprintf('exec %s - ', $this->rrdtool);
         // var_dump($rrdtool);
 
         // Not sure about this one... required for rrdcached

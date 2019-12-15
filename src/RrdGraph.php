@@ -539,13 +539,13 @@ class RrdGraph
         ];
 
         $colors = [
-            'BACK'   => '#ffffff00',
-            'CANVAS' => "${blue}00",
-            'GRID'   => "${blue}00",
-            'MGRID'  => "${blue}33",
-            'ARROW'  => "${blue}00",
-            'AXIS'   => "${blue}00",
-            'FONT'   => "${textColor}",
+            'BACK'   => new Color('#ffffff00'),
+            'CANVAS' => new Color($this->drawOnlyGraph() ? '#ffffff' : $blue, '00'), // Is this required?
+            'GRID'   => new Color($blue, '00'),
+            'MGRID'  => new Color($blue, '33'),
+            'ARROW'  => new Color($blue, '00'),
+            'AXIS'   => new Color($blue, '00'),
+            'FONT'   => new Color($textColor),
         ];
         foreach ($colors as $target => $color) {
             $params[] = "--color $target$color";
@@ -553,7 +553,6 @@ class RrdGraph
 
         if ($this->drawOnlyGraph()) {
              $params[] = '--only-graph';
-             $params[] = '--color CANVAS#ffffff00';
         }
 
         if ($this->disableCached) {

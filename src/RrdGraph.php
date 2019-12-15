@@ -92,6 +92,9 @@ class RrdGraph
 
     protected $disableCached = false;
 
+    /** @var int|null */
+    protected $step = null;
+
     /**
      * @return int
      */
@@ -125,6 +128,12 @@ class RrdGraph
     public function setEnd($end)
     {
         $this->end = $end;
+        return $this;
+    }
+
+    public function setStep($step)
+    {
+        $this->step = $step;
         return $this;
     }
 
@@ -526,6 +535,7 @@ class RrdGraph
             '--lower-limit' => $this->getLowerLimit(),
             '--upper-limit' => $this->getUpperLimit(),
             '-Z' => $this->useNanForAllMissingData, // Do not fail on missing DS
+            '--step' => $this->step,
         ];
 
         $colors = [

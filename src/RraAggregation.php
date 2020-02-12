@@ -13,6 +13,12 @@ class RraAggregation extends Rra
         'LAST'
     ];
 
+    /**
+     * What percentage of UNKOWN data is allowed so that the consolidated value is
+     * still regarded as known: 0% - 99% (0-1). Typical is 50% (0.5).
+     *
+     * @var float
+     */
     protected $xFilesFactor;
 
     protected $steps;

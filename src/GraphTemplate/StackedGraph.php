@@ -9,9 +9,20 @@ abstract class StackedGraph extends Template
 {
     protected $parts = [];
 
+    protected $disabledDsNames = [];
+
+    protected $min = 0;
+
+    protected $max;
+
     protected function getParts()
     {
         return $this->parts;
+    }
+
+    // Overridden
+    protected function disableDs($dsName)
+    {
     }
 
     public function applyToGraph(RrdGraph $graph)
@@ -22,15 +33,17 @@ abstract class StackedGraph extends Template
         $defs = [];
 
         foreach ($this->getArrayParam('disableDatasources') as $dsName) {
+            // TODO: disable real names
+            $dsName = \str_replace([' ', '/'], '', \strtolower($dsName));
+            $this->disabledDsNames[$dsName] = $dsName;
+            $this->disableDs($dsName);
             unset($parts[$dsName]);
         }
 
         $first = true;
         $shift = $this->getParam('shift');
-        $min = null;
-        $max = null;
-        $min = 0;
-        $max = 100;
+        $min = $this->getParam('min', $this->min);
+        $max = $this->getParam('max', $this->max);
 
         // This is to show what is missing to reach Max in a Stack
         $showMissingOnTop = $this->getParam('showMissingOnTop');

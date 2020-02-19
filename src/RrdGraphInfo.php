@@ -72,6 +72,8 @@ class RrdGraphInfo
 
         $props = [
             'print' => [],
+            'headerLength' => 0,
+            'imageSize' => 0,
         ];
         $pos = 0;
         $blobSize = null;
@@ -113,6 +115,8 @@ class RrdGraphInfo
                     $value = static::parseLocalizedFloat($match[1]);
                 }
                 $props['print'][$key] = $value;
+            } elseif (/*$pos === 0 &&*/ preg_match('/^OK /', $line)) {
+                return $props;
             } else {
                 throw new RuntimeException("Unable to parse rrdgraph info line: '$line'");
             }

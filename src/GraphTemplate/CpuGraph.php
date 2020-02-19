@@ -7,16 +7,16 @@ use gipfl\RrdTool\RrdGraph;
 class CpuGraph extends StackedGraph
 {
     protected $parts = [
-        'iowait'     => '#F96266cc',
-        'softirq'    => '#F962F5cc',
-        'irq'        => '#8362F9cc',
-        'nice'       => '#D48823cc',
-        'steal'      => '#000000cc',
-        'guest'      => '#333333cc',
-        'guest_nice' => '#aaaaaacc',
-        'system'     => '#F9AF62cc',
-        'user'       => '#F9E962cc',
-        'idle'       => '#44bb77cc',
+        'iowait'     => '#F96266aa',
+        'softirq'    => '#F962F5aa',
+        'irq'        => '#8362F9aa',
+        'nice'       => '#D48823aa',
+        'steal'      => '#000000aa',
+        'guest'      => '#333333aa',
+        'guest_nice' => '#aaaaaaaa',
+        'system'     => '#F9AF62aa',
+        'user'       => '#F9E962aa',
+        'idle'       => '#44bb7799',
     ];
 
     protected $whiteParts = [
@@ -45,6 +45,20 @@ class CpuGraph extends StackedGraph
         'idle'       => '#00000000',
     ];
 
+    protected $sums = [
+        'def_average_iowait',
+        'def_average_softirq',
+        'def_average_irq',
+        'def_average_nice',
+        'def_average_steal',
+        'def_average_guest',
+        'def_average_guest_nice',
+        'def_average_system',
+        'def_average_user',
+    ];
+
+    protected $max = 100;
+
     protected function sum(RrdGraph $graph, $defs, $preferredAlias)
     {
         return $graph->cdef(
@@ -61,31 +75,36 @@ class CpuGraph extends StackedGraph
         );
     }
 
+    protected function disableDs($dsName)
+    {
+        $pos = \array_search("def_average_$dsName", $this->sums);
+        if ($pos !== false) {
+            unset($this->sums[$pos]);
+        }
+    }
+
     public function applyToGraph(RrdGraph $graph)
     {
         parent::applyToGraph($graph);
 
-        $sum = $this->sum($graph, [
-            'def_average_iowait',
-            'def_average_softirq',
-            'def_average_irq',
-            'def_average_nice',
-            'def_average_steal',
-            'def_average_guest',
-            'def_average_guest_nice',
-            'def_average_system',
-            'def_average_user',
-        ], 'total');
+        $sum = $this->sum($graph, $this->sums, 'total');
+        $this->showTrend($graph, $sum);
     }
 
     protected function getParts()
     {
         if ($this->getParam('onlyWhite')) {
-            return $this->whiteParts;
+            $parts = $this->whiteParts;
         } elseif ($this->getParam('onlyBlack')) {
-            return $this->blackParts;
+            $parts = $this->blackParts;
         } else {
-            return $this->parts;
+            $parts = $this->parts;
         }
+
+        foreach ($this->disabledDsNames as $dsName) {
+            unset($parts[$dsName]);
+        }
+
+        return $parts;
     }
 }

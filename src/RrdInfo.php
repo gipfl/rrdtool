@@ -79,6 +79,11 @@ class RrdInfo
         return $this->dsInfo;
     }
 
+    public function listDsNames()
+    {
+        return \array_keys($this->dsInfo);
+    }
+
     /**
      * @return RraSet
      */

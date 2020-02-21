@@ -291,7 +291,7 @@ class RrdGraph
             return $this->onlyGraph;
         }
 
-//        return $this->height < 30;
+        return $this->height < 80;
         return $this->height < 120;
     }
 
@@ -479,10 +479,15 @@ class RrdGraph
     {
         $blue = '#0095BF'; // @icinga-blue
         $textColor = $this->getTextColor();
-        // solarized-dark:
-        // $blue = '586e75';
-        // $textColor = 'e3e3e3';
+        $solarizedDark = false;
+        if ($solarizedDark) {
+            $blue = '#586e75';
+            $textColor = '#e3e3e3';
+        }
         $gridFontSize = $this->height < 160 ? 6 : 7;
+        if ($this->width < 100) {
+            $gridFontSize = 4;
+        }
         $fontFamily = 'DejaVuSerif';
         $fontFamily = 'LiberationSerif';
         $fontFamily = 'LiberationSansMono';
@@ -512,11 +517,10 @@ class RrdGraph
             // '--font-render-mode' => 'light', // normal, light, mono
             // '-y none',
             // '-x none',
-            // '--zoom' => 4,
+            '--zoom' => 1,
             '--watermark' => $this->getWatermark(),
             '--imgformat' => $this->getFormat(),
             // '-n AXIS:5',
-            '--units-length' => '4',
             '--rigid' => $this->rigid,
             // '--autoscale',
             // '--alt-autoscale',

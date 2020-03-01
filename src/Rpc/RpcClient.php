@@ -44,7 +44,7 @@ class RpcClient
         return $this->jsonRpc->request('rrd.graph', $params);
     }
 
-    protected function version()
+    public function version()
     {
         return $this->jsonRpc->request('rrd.version');
     }
@@ -56,5 +56,12 @@ class RpcClient
         $jsonRpc->handle($netString);
 
         return $jsonRpc;
+    }
+
+    public function close()
+    {
+        if ($this->jsonRpc) {
+            $this->jsonRpc->close();
+        }
     }
 }

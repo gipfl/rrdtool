@@ -59,7 +59,7 @@ class StreamingDefinitionParser implements EventEmitterInterface
         $start = $this->position;
         $length = 0;
         while ($this->position < $this->length
-            && ! preg_match('/[\r\n\s]/', ($current = $this->requireNextCharacter()))
+            && ! \preg_match('/[\r\n\s]/', ($current = $this->requireNextCharacter()))
         ) {
             if ($current === '\\') {
                 $this->position++;

@@ -2,6 +2,7 @@
 
 namespace gipfl\RrdTool;
 
+// DS:ds-name[=mapped-ds-name[[source-index]]]:DST:dst arguments
 class Ds
 {
     /** @var string ds-name must be 1 to 19 characters long, allowed chars: [a-zA-Z0-9_] */
@@ -74,6 +75,11 @@ class Ds
         return $this->max;
     }
 
+    public function __toString()
+    {
+        return $this->toString();
+    }
+
     public function toString()
     {
         // U -> unknown
@@ -81,7 +87,7 @@ class Ds
         $max = $this->max === null ? 'U' : $this->max;
         $dsParams = "$min:$max";
 
-        return sprintf(
+        return \sprintf(
             "DS:%s:%s:%d:%s",
             $this->name,
             $this->type,

@@ -28,6 +28,11 @@ class RraSet
         return $this->rras;
     }
 
+    public function __toString()
+    {
+        return $this->toString();
+    }
+
     public function toString()
     {
         return \implode(' ', $this->rras);

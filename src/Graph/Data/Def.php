@@ -188,16 +188,18 @@ class Def extends Definition
 
     protected function render()
     {
-        return 'DEF' . \implode(':', [
+        return \sprintf(
+            'DEF:%s=%s:%s:%s',
             $this->getVariableName(),
+            $this->getRrdFile(), // TODO: ESCAPE!!
             $this->getDsName(),
             $this->getConsolidationFunction()
-        ])
-            . $this::optionalNamedParameter('step', $this->getStep())
-            . $this::optionalNamedParameter('start', $this->getStart())
-            . $this::optionalNamedParameter('end', $this->getEnd())
-            . $this::optionalNamedParameter('reduce', $this->getReduce())
-            . $this::optionalNamedParameter('daemon', $this->getDaemon())
-            ;
+        )
+        . $this::optionalNamedParameter('step', $this->getStep())
+        . $this::optionalNamedParameter('start', $this->getStart())
+        . $this::optionalNamedParameter('end', $this->getEnd())
+        . $this::optionalNamedParameter('reduce', $this->getReduce())
+        . $this::optionalNamedParameter('daemon', $this->getDaemon())
+        ;
     }
 }

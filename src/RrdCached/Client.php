@@ -3,11 +3,13 @@
 namespace gipfl\RrdTool\RrdCached;
 
 use Exception;
+use gipfl\Protocol\JsonRpc\Error;
+use gipfl\RrdTool\DsList;
+use gipfl\RrdTool\RraSet;
 use gipfl\RrdTool\RrdInfo;
+use gipfl\RrdTool\SampleRraSet;
 use React\EventLoop\LoopInterface;
 use React\Promise\Deferred;
-use React\Promise\FulfilledPromise;
-use function React\Promise\resolve;
 use function React\Promise\Timer\timeout;
 use React\Socket\ConnectionInterface;
 use React\Socket\UnixConnector;
@@ -110,7 +112,7 @@ class Client
         // it's commands, this could be an undesired race condition. We should
         // either combine both strings and parse two results - or implement some
         // other blocking logic.
-        if (is_array($commands)) {
+        if (\is_array($commands)) {
             if (empty($commands)) {
                 throw new RuntimeException('Cannot run BATCH with no command');
             }
@@ -180,7 +182,7 @@ class Client
 
     public function first($file, $rra = 0)
     {
-        $file = $this->quoteFilename($file);
+        $file = static::quoteFilename($file);
 
         return $this->send("FIRST $file $rra")->then(function ($result) {
             return (int) $result;
@@ -197,6 +199,9 @@ class Client
 
         return $this->send("LAST $file")->then(function ($result) {
             return (int) $result;
+        })->otherwise(function (Exception $e) {
+            // -1 Error: rrdcached: Invalid timestamp returned
+            return Error::forException($e);
         });
     }
 
@@ -206,7 +211,7 @@ class Client
      */
     public function flush($file)
     {
-        $file = $this->quoteFilename($file);
+        $file = static::quoteFilename($file);
 
         return $this->send("FLUSH $file")->then(function ($result) {
             // $result is 'Successfully flushed <path>/<filename>.rrd.'
@@ -220,7 +225,7 @@ class Client
      */
     public function forget($file)
     {
-        $file = $this->quoteFilename($file);
+        $file = static::quoteFilename($file);
 
         return $this->send("FORGET $file")->then(function ($result) {
             // $result is 'Gone!'
@@ -237,7 +242,7 @@ class Client
      */
     public function flushAndForget($file)
     {
-        $file = $this->quoteFilename($file);
+        $file = static::quoteFilename($file);
 
         return $this->flush($file)->then(function () use ($file) {
             return $this->forget($file);
@@ -246,7 +251,7 @@ class Client
 
     public function pending($file)
     {
-        $file = $this->quoteFilename($file);
+        $file = static::quoteFilename($file);
         return $this->send("PENDING $file")->then(function ($result) {
             if (is_array($result)) {
                 return $result;
@@ -262,21 +267,41 @@ class Client
     public function info($file)
     {
         return $this->rawInfo($file)->then(function ($result) {
-            return RrdInfo::parseCachedLines($result);
+            return RrdInfo::parseLines($result);
         });
     }
 
     public function rawInfo($file)
     {
-        $file = $this->quoteFilename($file);
+        $file = static::quoteFilename($file);
 
         return $this->send("INFO $file");
     }
 
-    protected function quoteFilename($filename)
+    /**
+     * @param $filename
+     * @param $step
+     * @param $start
+     * @param DsList $dsList
+     * @param RraSet $rraSet
+     * @return \React\Promise\Promise
+     */
+    protected function createFile($filename, $step, $start, DsList $dsList, RraSet $rraSet)
+    {
+        return $this->send(\sprintf(
+            "CREATE %s -s %d -b %d %s %s",
+            static::quoteFilename($filename),
+            $step,
+            $start,
+            $dsList,
+            $rraSet
+        ));
+    }
+
+    public static function quoteFilename($filename)
     {
         // TODO: do we need to escape/quote here?
-        return $filename;
+        return \addcslashes($filename, ' ');
         return "'" . addcslashes($filename, "'") . "'";
     }
 

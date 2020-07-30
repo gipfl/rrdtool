@@ -44,7 +44,18 @@ class RpcDaemon
     {
         $host = '0.0.0.0';
         $port = 5663;
-        $socket = new Server("$host:$port", $this->loop);
+        $context = ['tcp' => [
+            // 'backlog'      => 200,
+            // 'so_reuseport' => true,
+            // 'ipv6_v6only'  => true
+        ]];
+        if (PHP_VERSION_ID >= 70000) {
+            // $context['tcp']['so_reuseport'] = true;
+        }
+        if (PHP_VERSION_ID >= 70100) {
+            // $context['tcp']['tcp_nodelay'] = true;
+        }
+        $socket = new Server("$host:$port", $this->loop, $context);
         $this->connections = new SplObjectStorage();
         Logger::info("Starting RPC listener on $host:$port");
         $socket->on('connection', function (ConnectionInterface $connection) {

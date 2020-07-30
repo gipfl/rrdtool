@@ -44,6 +44,14 @@ class RpcHandler implements PacketHandler
                     return $this->client->forget($packet->getParam('file'));
                 case 'rrdtool.flushAndForget':
                     return $this->client->flushAndForget($packet->getParam('file'));
+                case 'rrdtool.delete':
+                    $filename = $packet->getParam('file');
+                    return $this->client->forget($filename)
+                        ->then(function () use ($filename) {
+                            // This blocks:
+                            @unlink($this->rrdtool->getBasedir() . '/' . $filename);
+                            return true;
+                        });
                 case 'rrdtool.info':
                     return $this->client->info($packet->getParam('file'));
                 case 'rrdtool.rawinfo':

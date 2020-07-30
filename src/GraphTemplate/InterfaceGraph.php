@@ -156,6 +156,7 @@ class InterfaceGraph extends Template
             $alpha = \sprintf('%02x', floor($grad * $i));
             $graph->add((new Area($avgStep, $stepColor->setAlphaHex($alpha)))->setStack());
         }
+        $this->showTrend($graph, $defAvg, 86400, '#dd0000');
         for ($i = $steps; $i > 0; $i--) {
             $alpha = \sprintf('%02x', floor($grad * $i));
             $area = new Area($maxStep, $stepColor->setAlphaHex($alpha));

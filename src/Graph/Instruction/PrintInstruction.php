@@ -35,6 +35,15 @@ class PrintInstruction extends Instruction
     /** @var string */
     protected $format;
 
+    /** @var bool */
+    protected $strftime;
+
+    /** @var bool */
+    protected $valstrftime;
+
+    /** @var bool */
+    protected $valstrfduration;
+
     // TODO: [:strftime|:valstrftime|:valstrfduration]
     public function __construct($vname, $format)
     {
@@ -77,6 +86,62 @@ class PrintInstruction extends Instruction
         $this->format = $format;
         return $this;
     }
+
+    /**
+     * @return bool
+     */
+    public function isStrftime()
+    {
+        return $this->strftime;
+    }
+
+    /**
+     * @param bool $strftime
+     * @return $this
+     */
+    public function setStrftime($strftime = true)
+    {
+        $this->strftime = $strftime;
+        return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isValstrftime()
+    {
+        return $this->valstrftime;
+    }
+
+    /**
+     * @param bool $valstrftime
+     * @return $this
+     */
+    public function setValstrftime($valstrftime = true)
+    {
+        $this->valstrftime = $valstrftime;
+        return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isValstrfduration()
+    {
+        return $this->valstrfduration;
+    }
+
+    /**
+     * @param bool $valstrfduration
+     * @return $this
+     */
+    public function setValstrfduration($valstrfduration = true)
+    {
+        $this->valstrfduration = $valstrfduration;
+        return $this;
+    }
+
+
 
     public function render()
     {

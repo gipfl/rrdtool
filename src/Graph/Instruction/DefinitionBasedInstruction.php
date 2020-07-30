@@ -89,7 +89,7 @@ abstract class DefinitionBasedInstruction extends Instruction
         } elseif (\ctype_digit($number)) {
             return (string) (int) $number;
         } else {
-            return \rtrim(\sprintf('%.6F', $number), 0);
+            return \preg_replace('/(\..+?)0+$/', '\1', \sprintf('%.6F', $number));
         }
     }
 }

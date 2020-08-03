@@ -95,6 +95,9 @@ class RrdGraph
     /** @var int|null */
     protected $step = null;
 
+    /** @var bool */
+    protected $darkTheme = false;
+
     /**
      * @return int
      */
@@ -475,14 +478,26 @@ class RrdGraph
         return $this;
     }
 
+    /**
+     * @param bool $darkTheme
+     * @return $this
+     */
+    public function setDarkTheme($darkTheme = true)
+    {
+        $this->darkTheme = $darkTheme;
+
+        return $this;
+    }
+
     protected function getMainParams()
     {
-        $blue = '#0095BF'; // @icinga-blue
-        $textColor = $this->getTextColor();
-        $solarizedDark = false;
-        if ($solarizedDark) {
+        // TODO: Combine with setTextColor()
+        if ($this->darkTheme) {
             $blue = '#586e75';
             $textColor = '#e3e3e3';
+        } else {
+            $blue = '#0095BF'; // @icinga-blue
+            $textColor = $this->getTextColor();
         }
         $gridFontSize = $this->height < 160 ? 6 : 7;
         if ($this->width < 100) {

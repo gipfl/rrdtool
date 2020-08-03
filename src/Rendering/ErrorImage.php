@@ -122,7 +122,7 @@ class ErrorImage
             'image' => ['width' => $width, 'height' => $height],
             'value' => [],
             'raw' =>  "data:image/png;base64,"
-                . base64_encode($this->render($width, $height)),
+                . \base64_encode($this->render($width, $height)),
             'content-type' => 'image/png',
             // 'error'
         ];

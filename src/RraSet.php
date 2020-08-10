@@ -51,6 +51,20 @@ class RraSet
         return $size;
     }
 
+    public function getRraByIndex($index)
+    {
+        if (isset($this->rras[$index])) {
+            return $this->rras[$index];
+        } else {
+            throw new \InvalidArgumentException("There is no RRA at index '$index'");
+        }
+    }
+
+    public function getLongestRra()
+    {
+        return $this->getRraByIndex($this->getIndexForLongestRra());
+    }
+
     public function getIndexForLongestRra()
     {
         $maxPdp = 0;

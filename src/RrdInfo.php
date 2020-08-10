@@ -113,6 +113,13 @@ class RrdInfo
         return $this->rra->getDataSize() * $this->countDataSources();
     }
 
+    public function getMaxRetention()
+    {
+        $rra = $this->getRraSet()->getLongestRra();
+
+        return $rra->getRows() * $rra->getSteps() * $this->getStep();
+    }
+
     /**
      * @param $string
      * @return static

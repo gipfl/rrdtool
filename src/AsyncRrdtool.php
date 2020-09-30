@@ -82,7 +82,7 @@ class AsyncRrdtool
                 if ($result === false) {
                     $response[$key] = false;
                 } else {
-                    $response[$key] = RrdInfo::parseRrdToolOutput($result);
+                    $response[$key] = RrdInfo::parse($result);
                 }
             }
 
@@ -278,7 +278,6 @@ class AsyncRrdtool
         if ($this->logCommunication) {
             // $this->logger()->info("> $command");
         }
-
         $stdIn->write("$command\n");
 
         return Timer\timeout($deferred->promise(), 3, $this->loop);

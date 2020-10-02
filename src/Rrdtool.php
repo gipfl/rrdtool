@@ -27,6 +27,8 @@ class Rrdtool
 
     protected $maxCmds = 10000;
 
+    protected $spentTimings;
+
     public function __construct($basedir, $rrdtool = '/usr/bin/rrdtool', $socket = null)
     {
         $this->basedir = $basedir;
@@ -37,6 +39,40 @@ class Rrdtool
     public function getBasedir()
     {
         return $this->basedir;
+    }
+
+    public function getTotalSpentTimings()
+    {
+        return $this->spentTimings;
+    }
+
+    /**
+     * Line saying OK u:1.14 s:0.07 r:1.21
+     * This can be is localized:
+     * OK u:0,02 s:0,00 r:0,01
+     * OK u:0.02 s:0.00 r:0.01
+     *
+     * @param $line
+     */
+    protected function parseTimings($line)
+    {
+        if (preg_match('/^OK\su:([0-9.,]+)\ss:([0-9.,]+)\sr:([0-9.,]+)\n$/', $line, $m)) {
+            $this->spentTimings = (object) [
+                'user' => static::parseLocalizedFloat($m[1]),
+                'system' => static::parseLocalizedFloat($m[2]),
+                'real' => static::parseLocalizedFloat($m[3]),
+            ];
+        } else {
+            // TODO: log
+            echo "Invalid timings: $line\n";
+            $this->spentTimings = null;
+        }
+    }
+
+    // duplicate
+    public static function parseLocalizedFloat($string)
+    {
+        return (float) \str_replace(',', '.', $string);
     }
 
     public function recreateFile($rrdFile, $force)
@@ -298,6 +334,7 @@ class Rrdtool
             $lastline = substr($this->stdout, $prevNewline + 1);
         }
         if (substr($lastline, 0, 3) === 'OK ') {
+            $this->parseTimings($lastline);
             return true;
         } elseif (substr($lastline, 0, 7) === 'ERROR: ') {
             $this->setError($lastline);
@@ -310,13 +347,6 @@ class Rrdtool
     public function getStdout()
     {
         // Strip line saying OK u:1.14 s:0.07 r:1.21
-        // This can be is localized:
-        // OK u:0,02 s:0,00 r:0,01
-        // OK u:0.02 s:0.00 r:0.01
-
-        // RrdGraph used to preg_replace:
-        // /OK\su:[0-9.,]+\ss:[0-9.,]+\sr:[0-9.,]+\n$/
-
         $lastLine = \substr($this->stdout, strrpos($this->stdout, "\n", -2) + 1);
         if (\substr($lastLine, 0, 3) === 'OK ') {
             return \substr($this->stdout, 0, strrpos($this->stdout, "\n", -2));

@@ -29,9 +29,16 @@ class RrdGraphInfo
     public static function appendImageToProps(& $props, $image, $format)
     {
         $contentType = static::getContentTypeForFormat($format);
-        $props['raw'] = "data:$contentType;base64," . \base64_encode($image);
         $props['format'] = \strtolower($format);
         $props['type'] = $contentType;
+        if ($format === 'SVG') {
+            // SVGs are valid UTF-8 and consume less space w/o base64
+            //
+            // $props['raw'] = "data:$contentType;charset=UTF-8,"
+            $props['raw'] = "data:$contentType;utf8," . static::prepareSvgDataString($image);
+        } else {
+            $props['raw'] = "data:$contentType;base64," . \base64_encode($image);
+        }
     }
 
     public static function getContentTypeForFormat($format)
@@ -111,13 +118,19 @@ class RrdGraphInfo
                 $key = $match[1];
                 $value = $match[2];
                 // TODO: what about INTs?
-                if (\preg_match('/^"?(\d+[,.]\d+)"$/', $value, $match)) {
-                    $value = static::parseLocalizedFloat($match[1]);
+                if (\preg_match('/^"?(\d+)([,.]\d+)?"$/', $value, $match)) {
+                    if (isset($match[2])) {
+                        $value = static::parseLocalizedFloat($match[1] . $match[2]);
+                    } else {
+                        $value = (int) $match[1];
+                    }
                 }
                 $props['print'][$key] = $value;
             } elseif (/*$pos === 0 &&*/ preg_match('/^OK /', $line)) {
+                $props['ok_line'] = $line;
                 return $props;
             } else {
+\Icinga\Application\Logger::error($image);
                 throw new RuntimeException("Unable to parse rrdgraph info line: '$line'");
             }
         }
@@ -129,6 +142,34 @@ class RrdGraphInfo
 
     public static function parseLocalizedFloat($string)
     {
-        return (float)\str_replace(',', '.', $string);
+        return (float) \str_replace(',', '.', $string);
+    }
+
+    /**
+     * Removes newlines, quotes single quotes, then replaces double with single
+     * quotes and finally only escapes a very few essential characters (<, >, #)
+     *
+     * @param string $svg
+     * @return string
+     */
+    protected static function prepareSvgDataString($svg)
+    {
+        return str_replace([
+            "\r",
+            "\n",
+            "'",
+            '"',
+            '<',
+            '>',
+            '#',
+        ], [
+            '',
+            '',
+            '%27', // urlencode("'"),
+            "'",
+            '%3C', // urlencode('<'),
+            '%3E', // urlencode('>'),
+            '%23', // urlencode('#'),
+        ], $svg);
     }
 }

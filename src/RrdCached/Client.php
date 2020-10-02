@@ -7,7 +7,8 @@ use gipfl\Protocol\JsonRpc\Error;
 use gipfl\RrdTool\DsList;
 use gipfl\RrdTool\RraSet;
 use gipfl\RrdTool\RrdInfo;
-use gipfl\RrdTool\SampleRraSet;
+use Psr\Log\LoggerAwareTrait;
+use Psr\Log\NullLogger;
 use React\EventLoop\LoopInterface;
 use React\Promise\Deferred;
 use function React\Promise\Timer\timeout;
@@ -17,6 +18,8 @@ use RuntimeException;
 
 class Client
 {
+    use LoggerAwareTrait;
+
     protected $socketFile;
 
     /** @var LoopInterface */
@@ -43,6 +46,7 @@ class Client
     {
         $this->socketFile = $socketFile;
         $this->loop = $loop;
+        $this->setLogger(new NullLogger());
     }
 
     /**
@@ -356,17 +360,19 @@ class Client
         $this->pending[] = $deferred = new Deferred();
 
         $command = \rtrim($command, "\n") . "\n";
+        // Logger::debug
+        // echo "Sending $command\n";
 
         // foreach (\preg_split('/\r\n/', "$command") as $l) {
         //     echo "> $l\n";
         // }
         if ($this->connection === null) {
-            // Logger::info("Not yet connected, deferring $command");
+            $this->logger->debug("Not yet connected, deferring $command");
             $this->connect()->then(function () use ($command, $deferred) {
-                // Logger::info('Connected to RRDCacheD, now sending ' . trim($command));
+                $this->logger->debug('Connected to RRDCacheD, now sending ' . trim($command));
                 $this->connection->write("$command");
             })->otherwise(function (Exception $error) use ($deferred) {
-                // Logger::error('Connection to RRDCacheD failed');
+                $this->logger->error('Connection to RRDCacheD failed');
                 $deferred->reject($error);
             });
         } else {
@@ -385,23 +391,23 @@ class Client
 
         $attempt = $connector->connect($this->socketFile)->then(function (ConnectionInterface $connection) {
             $connection->on('end', function () {
-                // Logger::info('RRDCacheD Client ended');
+                $this->logger->info('RRDCacheD Client ended');
                 $this->connection = null;
             });
             $connection->on('error', function (\Exception $e) {
-                // Logger::error('RRDCacheD Client error: ' . $e->getMessage());
+                $this->logger->error('RRDCacheD Client error: ' . $e->getMessage());
                 $this->connection = null;
             });
 
             $connection->on('close', function () {
-                // Logger::info('RRDCacheD Client closed');
+                $this->logger->info('RRDCacheD Client closed');
                 $this->connection = null;
             });
 
             $this->connection = $connection;
             $this->initializeHandlers($connection);
         })->otherwise(function (Exception $e) {
-            // Logger::error('RRDCached connection error: ' . $e->getMessage());
+            $this->logger->error('RRDCached connection error: ' . $e->getMessage());
         });
 
         return timeout($attempt, 5, $this->loop);
@@ -505,6 +511,7 @@ class Client
     protected function rejectNextPending($message)
     {
         $next = \array_shift($this->pending);
+        $this->logger->debug("Rejecting: $message");
         $next->reject(new RuntimeException($message));
     }
 

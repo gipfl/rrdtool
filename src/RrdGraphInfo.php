@@ -117,7 +117,6 @@ class RrdGraphInfo
             } elseif (\preg_match('/^print\[(\d+)]\s=\s(.+)$/', $line, $match)) {
                 $key = $match[1];
                 $value = $match[2];
-                // TODO: what about INTs?
                 if (\preg_match('/^"?(\d+)([,.]\d+)?"$/', $value, $match)) {
                     if (isset($match[2])) {
                         $value = static::parseLocalizedFloat($match[1] . $match[2]);

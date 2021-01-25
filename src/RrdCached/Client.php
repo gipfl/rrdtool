@@ -416,7 +416,6 @@ class Client
     protected function initializeHandlers(ConnectionInterface $connection)
     {
         $connection->on('data', function ($data) {
-            // echo "< [RRD] $data\n";
             $this->processData($data);
         });
 

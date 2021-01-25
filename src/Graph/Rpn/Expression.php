@@ -19,6 +19,5 @@ class Expression
 
     public static function parse($string)
     {
-
     }
 }

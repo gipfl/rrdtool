@@ -83,7 +83,7 @@ trait AsyncHelper
     {
         $result = null;
         /** @var PromiseInterface $promise */
-        $promise->then(function ($promiseResult) use (& $result) {
+        $promise->then(function ($promiseResult) use (&$result) {
             $result = $promiseResult;
         }, function (Exception $e) use ($allowFailures) {
             if (! $allowFailures) {

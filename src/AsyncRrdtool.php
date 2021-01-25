@@ -249,13 +249,13 @@ class AsyncRrdtool
             // $logger->debug(\sprintf("Running %s: ", $command));
             $pending[$key] = $this
                 ->send($command)
-                ->then(function ($result) use (& $results, & $pending, $key, $logger) {
+                ->then(function ($result) use (&$results, &$pending, $key, $logger) {
                     $results[$key] = $result;
                     unset($pending[$key]);
-                })->otherwise(function ($error) use (& $results, & $pending, $key, $logger) {
+                })->otherwise(function ($error) use (&$results, &$pending, $key, $logger) {
                     $results[$key] = false;
                     unset($pending[$key]);
-                })->always(function () use (& $results, $deferred, & $pending, $logger) {
+                })->always(function () use (&$results, $deferred, &$pending, $logger) {
                     if (empty($pending)) {
                         $deferred->resolve($results);
                     }

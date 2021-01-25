@@ -15,9 +15,9 @@ class StreamingDefinitionParser implements EventEmitterInterface
 
     protected $length;
 
-    public function parse(& $string)
+    public function parse(&$string)
     {
-        $this->string = & $string;
+        $this->string = &$string;
         $this->position = 0;
         $this->length = \strlen($string);
         $this->run();

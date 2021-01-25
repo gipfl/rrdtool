@@ -26,7 +26,7 @@ class RrdGraphInfo
         return $props;
     }
 
-    public static function appendImageToProps(& $props, $image, $format)
+    public static function appendImageToProps(&$props, $image, $format)
     {
         $contentType = static::getContentTypeForFormat($format);
         $props['format'] = \strtolower($format);

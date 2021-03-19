@@ -11,6 +11,7 @@ use Psr\Log\LoggerAwareTrait;
 use Psr\Log\NullLogger;
 use React\EventLoop\LoopInterface;
 use React\Promise\Deferred;
+use React\Promise\ExtendedPromiseInterface;
 use function React\Promise\Timer\timeout;
 use React\Socket\ConnectionInterface;
 use React\Socket\UnixConnector;
@@ -97,12 +98,13 @@ class Client
      * </code>
      *
      * @param string|array $commands
-     * @return \React\Promise\ExtendedPromiseInterface
+     * @return ExtendedPromiseInterface
      */
     public function batch($commands)
     {
-        if ($this->currentBatch !== null) {
-            return $this->currentBatch->then(function () use ($commands) {
+        if ($this->currentBatch instanceof ExtendedPromiseInterface) {
+            /** @var ExtendedPromiseInterface $result */
+            $result = $this->currentBatch->then(function () use ($commands) {
                 // Logger::warning(
                 //     'RRDCacheD: a BATCH is already in progress, queuing up.'
                 //     . ' This could be a bug, please let us know!'
@@ -110,6 +112,12 @@ class Client
 
                 return $this->batch($commands);
             });
+
+            return $result;
+        }
+
+        if ($this->currentBatch !== null) {
+            throw new \LogicException('RRDcacheD: current batch is neither a promise nor null');
         }
 
         // TODO: If a command manages it to be transmitted between "BATCH" and
@@ -131,10 +139,12 @@ class Client
                 if ($result === 'errors' || $result === true) { // TODO: either one or the other
                     // Was: '0 errors'
                     return true;
-                } elseif (\is_string($result)) {
+                }
+                if (\is_string($result)) {
                     // Well... unknown string, but anyways - no error
                     return true;
-                } elseif (\is_array($result)) {
+                }
+                if (\is_array($result)) {
                     $res = [];
                     foreach ($result as $line) {
                         if (\preg_match('/^(\d+)\s(.+)$/', $line, $match)) {
@@ -147,15 +157,19 @@ class Client
                     }
 
                     return $res;
-                } else {
-                    throw new RuntimeException('Unexpected result from BATCH: ' . \var_export($result, 1));
                 }
+
+                throw new RuntimeException('Unexpected result from BATCH: ' . \var_export($result, 1));
             })->always(function () {
                 $this->currentBatch = null;
             });
         });
 
-        return $this->currentBatch;
+        if ($this->currentBatch instanceof ExtendedPromiseInterface) {
+            return $this->currentBatch;
+        }
+
+        throw new \LogicException('RRDcacheD: current batch is not a promise');
     }
 
     /**
@@ -199,7 +213,7 @@ class Client
      */
     public function last($file)
     {
-        $file = $this->quoteFilename($file);
+        $file = static::quoteFilename($file);
 
         return $this->send("LAST $file")->then(function ($result) {
             return (int) $result;
@@ -259,10 +273,10 @@ class Client
         return $this->send("PENDING $file")->then(function ($result) {
             if (is_array($result)) {
                 return $result;
-            } else {
-                // '0 updates pending', so $result is 'updates pending'
-                return [];
             }
+
+            // '0 updates pending', so $result is 'updates pending'
+            return [];
         })->otherwise(function () {
             return [];
         });
@@ -526,9 +540,9 @@ class Client
     {
         if (empty($this->bufferLines)) {
             return $this->buffer;
-        } else {
-            return \implode("\n", $this->bufferLines) . "\n" . $this->buffer;
         }
+
+        return \implode("\n", $this->bufferLines) . "\n" . $this->buffer;
     }
 
     protected function rejectAllPending(Exception $exception)

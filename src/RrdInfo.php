@@ -3,146 +3,117 @@
 namespace gipfl\RrdTool;
 
 use InvalidArgumentException;
+use RuntimeException;
+use function ctype_digit;
+use function explode;
+use function is_numeric;
+use function preg_match;
+use function str_replace;
+use function strlen;
+use function strpos;
+use function substr;
+use function trim;
 
+// rrdtool create filename [--start|-b start time] [--step|-s step] [--template|-t template-file]
+// [--source|-r source-file] [--no-overwrite|-O] [--daemon|-d address]
+// [DS:ds-name[=mapped-ds-name[[source-index]]]:DST:dst arguments]
+// [RRA:CF:cf arguments]
 class RrdInfo
 {
     const FORMAT_RRDTOOL = 1;
-
     const FORMAT_RRDCACHED = 2;
 
-    /** @var string */
-    protected $filename;
+    protected string $filename;
+    protected int $step;
+    protected DsList $dsList;
+    protected RraSet $rra;
+    protected ?string $rrdVersion = null; // e.g. '0003'
+    protected ?int $headerSize = null;
+    protected ?int $lastUpdate = null;
 
-    /** @var string */
-    protected $rrdVersion;
-
-    /** @var int */
-    protected $headerSize;
-
-    /** @var int */
-    protected $step;
-
-    /** @var int|null */
-    protected $lastUpdate;
-
-    /** @var DsInfo[] */
-    protected $dsInfo;
-
-    /** @var RraSet */
-    protected $rra;
-
-    protected function __construct($filename, $step, array $dsInfo, RraSet $rra)
+    public function __construct(string $filename, int $step, DsList $dsList, RraSet $rra)
     {
         $this->filename = $filename;
         $this->step = $step;
-        $this->dsInfo = $dsInfo;
+        $this->dsList = $dsList;
         $this->rra = $rra;
     }
 
-    /**
-     * @return string
-     */
-    public function getFilename()
+    public function setHeaderSize(int $size)
+    {
+        $this->headerSize = $size;
+    }
+
+    public function getFilename(): string
     {
         return $this->filename;
     }
 
-    /**
-     * @return string
-     */
-    public function getRrdVersion()
+    public function getRrdVersion(): ?string
     {
         return $this->rrdVersion;
     }
 
-    /**
-     * @return int
-     */
-    public function getStep()
+    public function getStep(): int
     {
         return $this->step;
     }
 
-    /**
-     * @return int|null
-     */
-    public function getLastUpdate()
+    public function getLastUpdate(): ?int
     {
         return $this->lastUpdate;
     }
 
-    /**
-     * @return DsInfo[]
-     */
-    public function getDsInfo()
+    public function getDsList(): DsList
     {
-        return $this->dsInfo;
+        return $this->dsList;
     }
 
-    public function listDsNames()
+    public function listDsNames(): array
     {
-        return \array_keys($this->dsInfo);
+        return $this->dsList->listNames();
     }
 
-    /**
-     * @return RraSet
-     */
-    public function getRraSet()
+    public function getRraSet(): RraSet
     {
         return $this->rra;
     }
 
-    /**
-     * @return int
-     */
-    public function countDataSources()
+    public function countDataSources(): int
     {
-        return \count($this->dsInfo);
+        return count($this->dsList->listNames());
     }
 
-    public function getHeaderSize()
+    public function getHeaderSize(): ?int
     {
         return $this->headerSize;
     }
 
-    /**
-     * @return int
-     */
-    public function getDataSize()
+    public function getDataSize(): int
     {
-        return $this->rra->getDataSize() * $this->countDataSources();
+        return (int) ($this->rra->getDataSize() * $this->countDataSources());
     }
 
-    public function getMaxRetention()
+    public function getMaxRetention(): int
     {
         $rra = $this->getRraSet()->getLongestRra();
 
-        return $rra->getRows() * $rra->getSteps() * $this->getStep();
+        return (int) ($rra->getRows() * $rra->getSteps() * $this->getStep());
     }
 
-    /**
-     * @param $string
-     * @return static
-     */
-    public static function parse($string)
+    public static function parse(string $string): RrdInfo
     {
         return static::parseLines(\preg_split('/\n/', $string, -1, PREG_SPLIT_NO_EMPTY));
     }
 
-    /**
-     * @param array $lines
-     * @return static
-     */
-    public static function parseLines(array $lines)
+    public static function parseLines(array $lines): RrdInfo
     {
-        return static::instanceFromParsedStructure(static::prepareStructure(
-            $lines
-        ));
+        return static::instanceFromParsedStructure(static::prepareStructure($lines));
     }
 
-    protected static function detectLineFormat($line)
+    protected static function detectLineFormat($line): int
     {
-        return false === \strpos($line, ' = ')
+        return false === strpos($line, ' = ')
             ? self::FORMAT_RRDCACHED
             : self::FORMAT_RRDTOOL;
     }
@@ -151,11 +122,11 @@ class RrdInfo
      * @param array $lines
      * @return array
      */
-    protected static function prepareStructure(array $lines)
+    protected static function prepareStructure(array $lines): array
     {
         $result = [];
         if (empty($lines)) {
-            throw new \RuntimeException('Got no info lines to parse');
+            throw new RuntimeException('Got no info lines to parse');
         }
         $format = static::detectLineFormat($lines[0]);
         foreach ($lines as $line) {
@@ -170,12 +141,12 @@ class RrdInfo
         return $result;
     }
 
-    protected static function instanceFromParsedStructure(array $array)
+    protected static function instanceFromParsedStructure(array $array): RrdInfo
     {
         $self = new static(
             $array['filename'],
             $array['step'],
-            self::dsInfoFromArray($array['ds']),
+            self::dsListFromArray($array['ds']),
             self::rraInfoFromArray($array['rra'])
         );
         $self->rrdVersion = $array['rrd_version'];
@@ -195,11 +166,11 @@ class RrdInfo
             return null;
         }
 
-        if (\strlen($value) && $value[0] === '"') {
-            return \trim($value, '"');
+        if (strlen($value) && $value[0] === '"') {
+            return trim($value, '"');
         }
 
-        if (\ctype_digit($value)) {
+        if (ctype_digit($value)) {
             return (int) $value;
         }
 
@@ -211,17 +182,17 @@ class RrdInfo
         return $value;
     }
 
-    protected static function dsInfoFromArray($info)
+    protected static function dsListFromArray($info): DsList
     {
-        $result = [];
+        $list = new DsList();
         foreach ($info as $name => $dsInfo) {
-            $result[$name] = DsInfo::fromArray($name, $dsInfo);
+            $list->add(DsInfo::fromArray($name, $dsInfo)->toDs());
         }
 
-        return $result;
+        return $list;
     }
 
-    protected static function rraInfoFromArray($info)
+    protected static function rraInfoFromArray($info): RraSet
     {
         $rraSet = [];
         foreach ($info as $rra) {
@@ -234,23 +205,23 @@ class RrdInfo
     protected static function eventuallyParseFloat($value)
     {
         // dirty workaround for localized numbers
-        $value = \str_replace(',', '.', $value);
-        if (\is_numeric($value)) {
+        $value = str_replace(',', '.', $value);
+        if (is_numeric($value)) {
             return (float) $value;
         } else {
             return false;
         }
     }
 
-    protected static function splitKeyValueFromRrdTool($line)
+    protected static function splitKeyValueFromRrdTool($line): array
     {
-        list($key, $val) = \explode(' = ', $line);
+        list($key, $val) = explode(' = ', $line);
         return [$key, self::parseValue($val)];
     }
 
-    protected static function splitKeyValueFromRrdCached($line)
+    protected static function splitKeyValueFromRrdCached($line): array
     {
-        if (\preg_match('/^(.+?)\s([012])\s(.+)$/', $line, $match)) {
+        if (preg_match('/^(.+?)\s([012])\s(.+)$/', $line, $match)) {
             $key = $match[1];
             switch ($match[2]) {
                 case '0': // float
@@ -272,10 +243,10 @@ class RrdInfo
                     break;
                 default:
                     // This is impossible because of the above regex, but makes our IDE happy:
-                    throw new \RuntimeException("You should never reach this point");
+                    throw new RuntimeException("You should never reach this point");
             }
         } else {
-            throw new \RuntimeException("Got invalid info line from RRDcached: $line");
+            throw new RuntimeException("Got invalid info line from RRDcached: $line");
         }
 
         return [$key, $val];
@@ -283,21 +254,21 @@ class RrdInfo
 
     protected static function setArrayValue(array &$array, $key, $value)
     {
-        if (false === ($bracket = \strpos($key, '['))) {
+        if (false === ($bracket = strpos($key, '['))) {
             $array[$key] = $value;
         } else {
-            $type = \substr($key, 0, $bracket);
-            $key = \substr($key, $bracket + 1);
-            $bracket = \strpos($key, ']');
+            $type = substr($key, 0, $bracket);
+            $key = substr($key, $bracket + 1);
+            $bracket = strpos($key, ']');
             if ($bracket === false) {
-                throw new \RuntimeException('Missing right bracket in key: ' . $key);
+                throw new RuntimeException('Missing right bracket in key: ' . $key);
             }
-            $idx = \substr($key, 0, $bracket);
-            $key = \substr($key, $bracket + 2);
+            $idx = substr($key, 0, $bracket);
+            $key = substr($key, $bracket + 2);
 
             // No nesting support, e.g. ignore rra[0].cdp_prep[0].value
             // We also need inf/-inf support before allowing them
-            if (false !== \strpos($key, '[')) {
+            if (false !== strpos($key, '[')) {
                 return;
             }
 

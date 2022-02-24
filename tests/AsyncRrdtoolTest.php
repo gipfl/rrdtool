@@ -48,6 +48,6 @@ class AsyncRrdtoolTest extends TestCase
         $basedir = __DIR__ . '/files';
         $binary = '/usr/bin/rrdtool';
 
-        return new AsyncRrdtool($this->loop(), $basedir, $binary);
+        return new AsyncRrdtool($basedir, $binary);
     }
 }

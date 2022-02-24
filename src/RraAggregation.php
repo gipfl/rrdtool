@@ -6,7 +6,7 @@ use InvalidArgumentException;
 
 class RraAggregation extends Rra
 {
-    protected static $functions = [
+    protected static array $functions = [
         'AVERAGE',
         'MIN',
         'MAX',
@@ -19,11 +19,9 @@ class RraAggregation extends Rra
      *
      * @var float
      */
-    protected $xFilesFactor;
+    protected float $xFilesFactor;
 
-    protected $steps;
-
-    protected $rows;
+    protected int $steps;
 
     public static function isKnown($name)
     {
@@ -31,10 +29,9 @@ class RraAggregation extends Rra
     }
 
     /**
-     * xff:steps:rows
-     * @param $str
+     * @param string $str xff:steps:rows
      */
-    public function setArgumentsFromString($str)
+    public function setArgumentsFromString(string $str)
     {
         $parts = \preg_split('/:/', $str);
         if (\count($parts) !== 3) {
@@ -55,27 +52,22 @@ class RraAggregation extends Rra
         $this->rows = $info['rows'];
     }
 
-    public function getRows()
-    {
-        return $this->rows;
-    }
-
-    public function getSteps()
+    public function getSteps(): int
     {
         return $this->steps;
     }
 
-    public function getXFilesFactor()
+    public function getXFilesFactor(): ?float
     {
         return $this->xFilesFactor;
     }
 
-    public function getDataSize()
+    public function getDataSize(): int
     {
-        return $this->rows * static::BYTES_PER_DATAPOINT;
+        return (int) ($this->rows * static::BYTES_PER_DATAPOINT);
     }
 
-    public function toString()
+    public function toString(): string
     {
         return 'RRA:' . \implode(':', [
             $this->consolidationFunction,

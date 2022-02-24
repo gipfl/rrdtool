@@ -15,8 +15,6 @@ class RraForecasting extends Rra
         'FAILURES',
     ];
 
-    protected $rows;
-
     protected $alpha;
 
     protected $beta;
@@ -110,7 +108,7 @@ class RraForecasting extends Rra
      *
      * @return int
      */
-    public function getDataSize()
+    public function getDataSize(): int
     {
         return $this->rows * static::BYTES_PER_DATAPOINT;
     }

@@ -2,12 +2,14 @@
 
 namespace gipfl\RrdTool;
 
+use InvalidArgumentException;
+
 class RraSet
 {
     /** @var Rra[] */
-    protected $rras = [];
+    protected array $rras = [];
 
-    public function __construct($rras)
+    public function __construct(array $rras)
     {
         foreach ($rras as $rra) {
             if ($rra instanceof Rra) {
@@ -18,30 +20,30 @@ class RraSet
         }
     }
 
-    public static function fromString($str)
+    public static function fromString($str): RraSet
     {
         return new static(\preg_split('/ /', $str));
     }
 
-    public function getRras()
+    /**
+     * @return Rra[]
+     */
+    public function getRras(): array
     {
         return $this->rras;
     }
 
-    public function __toString()
+    public function __toString(): string
     {
         return $this->toString();
     }
 
-    public function toString()
+    public function toString(): string
     {
         return \implode(' ', $this->rras);
     }
 
-    /**
-     * @return int
-     */
-    public function getDataSize()
+    public function getDataSize(): int
     {
         $size = 0;
         foreach ($this->rras as $rra) {
@@ -51,21 +53,21 @@ class RraSet
         return $size;
     }
 
-    public function getRraByIndex($index)
+    public function getRraByIndex($index): Rra
     {
         if (isset($this->rras[$index])) {
             return $this->rras[$index];
         } else {
-            throw new \InvalidArgumentException("There is no RRA at index '$index'");
+            throw new InvalidArgumentException("There is no RRA at index '$index'");
         }
     }
 
-    public function getLongestRra()
+    public function getLongestRra(): Rra
     {
         return $this->getRraByIndex($this->getIndexForLongestRra());
     }
 
-    public function getIndexForLongestRra()
+    public function getIndexForLongestRra(): int
     {
         $maxPdp = 0;
         $rraIdx = 0;

@@ -8,12 +8,11 @@ abstract class Rra
 {
     const BYTES_PER_DATAPOINT = 8;
 
-    protected $consolidationFunction;
+    protected string $consolidationFunction;
+    protected ?int $currentRow = null;
+    protected int $rows;
 
-    /** @var int|null */
-    protected $currentRow;
-
-    protected function __construct($consolidationFunction)
+    protected function __construct(string $consolidationFunction)
     {
         $this->consolidationFunction = $consolidationFunction;
     }
@@ -25,19 +24,24 @@ abstract class Rra
      *
      * @return int
      */
-    abstract public function getDataSize();
+    abstract public function getDataSize(): int;
 
-    public function getConsolidationFunction()
+    public function getRows(): int
+    {
+        return $this->rows;
+    }
+
+    public function getConsolidationFunction(): string
     {
         return $this->consolidationFunction;
     }
 
-    public function __toString()
+    public function __toString(): string
     {
         return $this->toString();
     }
 
-    public function getCurrentRow()
+    public function getCurrentRow(): ?int
     {
         return $this->currentRow;
     }
@@ -58,7 +62,7 @@ abstract class Rra
      * @param array $info
      * @return RraAggregation
      */
-    public static function fromRraInfo(array $info)
+    public static function fromRraInfo(array $info): RraAggregation
     {
         $cf = $info['cf'];
         if (RraAggregation::isKnown($cf)) {
@@ -80,7 +84,7 @@ abstract class Rra
      * @param $str
      * @return Rra
      */
-    public static function fromString($str)
+    public static function fromString($str): Rra
     {
         if (\substr($str, 0, 4) !== 'RRA:') {
             throw new InvalidArgumentException(

@@ -2,6 +2,7 @@
 
 namespace gipfl\RrdTool\GraphTemplate;
 
+use Generator;
 use gipfl\RrdTool\Graph\Color;
 use gipfl\RrdTool\Graph\Instruction\Area;
 use gipfl\RrdTool\Graph\Instruction\HRule;
@@ -9,9 +10,11 @@ use gipfl\RrdTool\RrdGraph;
 
 class InterfaceGraph extends Template
 {
-    protected $dsRx = 'rxOctets';
+    // protected $dsRx = 'rxOctets';
+    protected $dsRx = 'rxBytes';
 
-    protected $dsTx = 'txOctets';
+    // protected $dsTx = 'txOctets';
+    protected $dsTx = 'txBytes';
 
     protected $colorRx = '57985B';
 
@@ -123,20 +126,21 @@ class InterfaceGraph extends Template
 
     public function addBytesAsBitsPerSecond(RrdGraph $graph, $filename, $ds, $color, $negate = false)
     {
+        $color = new Color($color);
         list($defAvg, $defMin, $defMax) = $this->avgMinMax($graph, $filename, $ds);
         $multiplier = $this->multiplier;
         $defAvg = $graph->cdef("$defAvg,$multiplier,*");
         $defMin = $graph->cdef("$defMin,$multiplier,*");
         $defMax = $graph->cdef("$defMax,$multiplier,*");
         $steps = 1; // One step only, otherwise image get's overloaded. We might want to drop this
-        $avgStep = $graph->cdef("${defAvg},${defMin},-,${steps},/", 'avgstep');
-        $maxStep = $graph->cdef("${defMax},${defAvg},-,${steps},/", 'maxstep');
+        $avgStep = $graph->cdef("$defAvg,$defMin,-,$steps,/", 'avgstep');
+        $maxStep = $graph->cdef("$defMax,$defAvg,-,$steps,/", 'maxstep');
 
         if ($negate) {
-            $defAvg = $graph->cdef("${defAvg},-1,*", 'negAvg');
-            $defMin = $graph->cdef("${defMin},-1,*", 'negMin');
-            $avgStep = $graph->cdef("${avgStep},-1,*", 'negAvgStep');
-            $maxStep = $graph->cdef("${maxStep},-1,*", 'negMaxStep');
+            $defAvg = $graph->cdef("$defAvg,-1,*", 'negAvg');
+            $defMin = $graph->cdef("$defMin,-1,*", 'negMin');
+            $avgStep = $graph->cdef("$avgStep,-1,*", 'negAvgStep');
+            $maxStep = $graph->cdef("$maxStep,-1,*", 'negMaxStep');
         }
 
         $graph->add((new HRule(0, $graph->getTextColor()->setAlphaHex('80'))));
@@ -149,25 +153,41 @@ class InterfaceGraph extends Template
             $min->setSkipScale();
         }
         $graph->add($min);
-        $grad = (80 / $steps);
-
-        $stepColor = new Color($color);
-        for ($i = 1; $i <= $steps; $i++) {
-            $alpha = \sprintf('%02x', floor($grad * $i));
-            $graph->add((new Area($avgStep, $stepColor->setAlphaHex($alpha)))->setStack());
+        foreach ($this->fadingStepsUp($color, $steps) as $stepColor) {
+            $graph->add((new Area($avgStep, $stepColor))->setStack());
         }
-        $this->showTrend($graph, $defAvg, 86400, '#dd0000');
-        for ($i = $steps; $i > 0; $i--) {
-            $alpha = \sprintf('%02x', floor($grad * $i));
-            $area = new Area($maxStep, $stepColor->setAlphaHex($alpha));
-            $area->setStack();
+
+        // $this->showTrend($graph, $defAvg, 86400, '#dd0000');
+        foreach ($this->fadingStepsDown($color, $steps) as $stepColor) {
+            $area = (new Area($maxStep, $stepColor))->setStack();
             if (! $showAllMaxValues) {
                 $area->setSkipScale();
             }
             $graph->add($area);
         }
+
         // The real line
         $graph->line1($defAvg, $color . 'ff');
         $graph->add(new Area($defAvg, "${color}33"));
+    }
+
+    protected function fadingStepsUp(Color $color, $steps): Generator
+    {
+        $grad = (80 / $steps);
+        for ($i = 1; $i <= $steps; $i++) {
+            $stepColor = clone($color);
+            $alpha = \sprintf('%02x', floor($grad * $i));
+            yield $stepColor->setAlphaHex($alpha);
+        }
+    }
+
+    protected function fadingStepsDown(Color $color, $steps): Generator
+    {
+        $grad = (80 / $steps);
+        for ($i = $steps; $i > 0; $i--) {
+            $stepColor = clone($color);
+            $alpha = \sprintf('%02x', floor($grad * $i));
+            yield $stepColor->setAlphaHex($alpha);
+        }
     }
 }

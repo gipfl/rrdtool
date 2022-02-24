@@ -9,13 +9,13 @@ class DsTest extends TestCase
 {
     public function testParsesSimpleDsDefinitions()
     {
-        $ds = Ds::create('temperature', 'GAUGE', 8640);
+        $ds = new Ds('temperature', 'GAUGE', 8640);
         $this->assertEquals('DS:temperature:GAUGE:8640:U:U', $ds->toString());
-        $ds = Ds::create('temperature', 'GAUGE', 8640, 0);
+        $ds = new Ds('temperature', 'GAUGE', 8640, 0);
         $this->assertEquals('DS:temperature:GAUGE:8640:0:U', $ds->toString());
-        $ds = Ds::create('temperature', 'GAUGE', 8640, null, 10000);
+        $ds = new Ds('temperature', 'GAUGE', 8640, null, 10000);
         $this->assertEquals('DS:temperature:GAUGE:8640:U:10000', $ds->toString());
-        $ds = Ds::create('temperature', 'GAUGE', 8640, -371, 10000);
+        $ds = new Ds('temperature', 'GAUGE', 8640, -371, 10000);
         $this->assertEquals('DS:temperature:GAUGE:8640:-371:10000', $ds->toString());
     }
 }

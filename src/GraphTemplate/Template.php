@@ -9,21 +9,16 @@ use gipfl\RrdTool\RrdGraph;
 
 abstract class Template
 {
-    protected $filename;
+    protected string $filename;
+    protected array $params;
 
-    protected $params;
-
-    public function __construct($filename, $params = null)
+    public function __construct($filename, array $params = [])
     {
         $this->filename = $filename;
-        if ($params === null) {
-            $this->setParams([]);
-        } else {
-            $this->setParams($params);
-        }
+        $this->setParams($params);
     }
 
-    public function setParams($params)
+    public function setParams($params): Template
     {
         $this->params = $params;
 
@@ -39,7 +34,7 @@ abstract class Template
         }
     }
 
-    protected function getArrayParam($name, $default = [])
+    protected function getArrayParam($name, array $default = []): array
     {
         if (\array_key_exists($name, $this->params)) {
             return (array) $this->params[$name];
@@ -50,18 +45,23 @@ abstract class Template
 
     abstract public function applyToGraph(RrdGraph $graph);
 
-    protected function addSmoke(RrdGraph $graph, $file, $dsname, $color = '0095BF', $showMaxPercentile = 100)
-    {
+    protected function addSmoke(
+        RrdGraph $graph,
+        string $file,
+        string $dsName,
+        $color = '0095BF',
+        $showMaxPercentile = 100
+    ) {
         $steps = 10;
-        $avg = $graph->def($file, $dsname, 'AVERAGE');
-        $min = $graph->def($file, $dsname, 'MIN');
-        $max = $graph->def($file, $dsname, 'MAX');
+        $avg = $graph->def($file, $dsName, 'AVERAGE');
+        $min = $graph->def($file, $dsName, 'MIN');
+        $max = $graph->def($file, $dsName, 'MAX');
         $avgStep = $graph->cdef("$avg,$min,-,$steps,/");
         $maxStep = $graph->cdef("$max,$avg,-,$steps,/");
         $pctMax = $graph->vdef("$max,$showMaxPercentile,PERCENT");
 
         $graph->add((new Area($min))->setSkipScale());
-        $grad = (80 / $steps);
+        $grad = (100 / $steps);
 
         $stepColor = new Color($color);
         for ($i = 1; $i <= $steps; $i++) {

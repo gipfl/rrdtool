@@ -66,7 +66,7 @@ class ErrorImage
             $message = (string) $error;
         }
         $img = \imagecreate($width, $height);
-        $bgColor = \imagecolorallocatealpha($img, 255, 255, 255, 255);
+        $bgColor = \imagecolorallocatealpha($img, 255, 255, 255, 127);
         $textColor = \imagecolorallocatealpha($img, 200, 100, 100, 0);
         imagecolortransparent($img, $bgColor);
 

@@ -88,7 +88,7 @@ class CpuGraph extends StackedGraph
         parent::applyToGraph($graph);
 
         $sum = $this->sum($graph, $this->sums, 'total');
-        $this->showTrend($graph, $sum);
+        // $this->showTrend($graph, $sum);
     }
 
     protected function getParts()

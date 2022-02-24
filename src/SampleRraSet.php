@@ -12,17 +12,17 @@ class SampleRraSet
         // 2880 entries with 5 minute step = 10 days
         'RRA:AVERAGE:0.5:5:2880',
         // 4320 entries with 30 minute step = 90 days
-        // 'RRA:AVERAGE:0.5:30:4320',
+        'RRA:AVERAGE:0.5:30:4320',
         // 5840 entries with 360 minute step = 4 years
-        // 'RRA:AVERAGE:0.5:360:5840',
+        'RRA:AVERAGE:0.5:360:5840',
         'RRA:MAX:0.5:1:2880',
         'RRA:MAX:0.5:5:2880',
-        // 'RRA:MAX:0.5:30:4320',
-        // 'RRA:MAX:0.5:360:5840',
+        'RRA:MAX:0.5:30:4320',
+        'RRA:MAX:0.5:360:5840',
         'RRA:MIN:0.5:1:2880',
         'RRA:MIN:0.5:5:2880',
-        // 'RRA:MIN:0.5:30:4320',
-        // 'RRA:MIN:0.5:360:5840'
+        'RRA:MIN:0.5:30:4320',
+        'RRA:MIN:0.5:360:5840'
     ];
 
     protected static $kickstartWithSeconds = [

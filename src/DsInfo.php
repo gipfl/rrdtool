@@ -4,17 +4,12 @@ namespace gipfl\RrdTool;
 
 class DsInfo
 {
-    public $name;
-
-    public $index;
-
-    public $type;
-
-    public $minimalHeartbeat;
-
-    public $min;
-
-    public $max;
+    public string $name;
+    public int $index;
+    public string $type;
+    public int $minimalHeartbeat;
+    public ?int $min = null;
+    public ?int $max = null;
 
     /**
      * https://stackoverflow.com/questions/41373910/what-is-rrd-last-ds
@@ -37,12 +32,12 @@ class DsInfo
 
     public $unknownSec;
 
-    protected function __construct($name)
+    protected function __construct(string $name)
     {
         $this->name = $name;
     }
 
-    public static function fromArray($name, $values)
+    public static function fromArray($name, $values): DsInfo
     {
         $info = new static($name);
         foreach ($values as $arrayKey => $value) {
@@ -71,7 +66,7 @@ class DsInfo
         return $info;
     }
 
-    public function toDs()
+    public function toDs(): Ds
     {
         return new Ds(
             $this->name,

@@ -5,23 +5,23 @@ namespace gipfl\RrdTool;
 // DS:ds-name[=mapped-ds-name[[source-index]]]:DST:dst arguments
 class Ds
 {
-    /** @var string ds-name must be 1 to 19 characters long, allowed chars: [a-zA-Z0-9_] */
-    protected $name;
+    /**
+     * ds-name must be 1 to 19 characters long, allowed chars: [a-zA-Z0-9_]
+     */
+    protected string $name;
 
-    /** @var int */
-    protected $heartbeat;
+    /**
+     * COUNTER|GAUGE|ABSOLUTE|DERIVE|DCOUNTER|DDERIVE - and COMPUTE
+     */
+    protected string $type;
 
-    // COUNTER|GAUGE|ABSOLUTE|DERIVE|DCOUNTER|DDERIVE - and COMPUTE
-    /** @var string */
-    protected $type;
+    protected int $heartbeat;
+    protected ?int $min = null;
+    protected ?int $max = null;
 
-    /** @var int */
-    protected $min;
+    protected ?string $alias = null;
 
-    /** @var int */
-    protected $max;
-
-    public function __construct($name, $type, $heartbeat, $min = null, $max = null)
+    public function __construct(string $name, string $type, int $heartbeat, ?int $min = null, ?int $max = null)
     {
         $this->name = $name;
         $this->type = $type;
@@ -30,23 +30,33 @@ class Ds
         $this->max  = $max;
     }
 
-    public static function create($name, $type, $heartbeat, $min = null, $max = null)
+    public static function fromString($string): Ds
     {
-        return new static($name, $type, $heartbeat, $min, $max);
+        $parts = preg_split('/:/', $string);
+        if (count($parts) < 4) {
+            throw new \InvalidArgumentException("Valid DataSource expected, got $string");
+        }
+        if ('DS' !== array_shift($parts)) {
+            throw new \InvalidArgumentException("Valid DataSource expected, got $string");
+        }
+        $min = $parts[3] ?? null;
+        if ($min === 'U') {
+            $min = null;
+        }
+        $max = $parts[4] ?? null;
+        if ($max === 'U') {
+            $max = null;
+        }
+
+        return new static($parts[0], $parts[1], (int) $parts[2], $min, $max);
     }
 
-    /**
-     * @return string
-     */
-    public function getName()
+    public function getName(): string
     {
         return $this->name;
     }
 
-    /**
-     * @return int
-     */
-    public function getHeartbeat()
+    public function getHeartbeat(): int
     {
         return $this->heartbeat;
     }
@@ -54,33 +64,55 @@ class Ds
     /**
      * @return string
      */
-    public function getType()
+    public function getType(): string
     {
         return $this->type;
     }
 
-    /**
-     * @return int
-     */
-    public function getMin()
+    public function hasMin(): bool
+    {
+        return $this->min !== null;
+    }
+
+    public function getMin(): ?int
     {
         return $this->min;
     }
 
-    /**
-     * @return int
-     */
-    public function getMax()
+    public function hasMax(): bool
+    {
+        return $this->max !== null;
+    }
+
+    public function getMax(): ?int
     {
         return $this->max;
     }
 
-    public function __toString()
+    /**
+     * @return string|null
+     */
+    public function getAlias(): ?string
+    {
+        return $this->alias;
+    }
+
+    /**
+     * @param string|null $alias
+     * @return Ds
+     */
+    public function setAlias(?string $alias): Ds
+    {
+        $this->alias = $alias;
+        return $this;
+    }
+
+    public function __toString(): string
     {
         return $this->toString();
     }
 
-    public function toString()
+    public function toString(): string
     {
         // U -> unknown
         $min = $this->min === null ? 'U' : $this->min;

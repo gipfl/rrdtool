@@ -2,18 +2,22 @@
 
 namespace gipfl\RrdTool;
 
+use React\Promise\ExtendedPromiseInterface;
+
 class RrdSummary
 {
+    /** @var AsyncRrdtool */
     protected $rrd;
 
     protected $aggregateMethods = [
         'max'   => ['MAX', 'MAXIMUM'],
         'min'   => ['MIN', 'MINIMUM'],
         'avg'   => ['AVERAGE', 'AVERAGE'],
+        'maxavg' => ['AVERAGE', 'MAXIMUM'],
         'stdev' => ['AVERAGE', 'STDEV'],
     ];
 
-    public function __construct(Rrdtool $rrd)
+    public function __construct(AsyncRrdtool $rrd)
     {
         $this->rrd = $rrd;
     }
@@ -32,7 +36,7 @@ class RrdSummary
         return $pattern;
     }
 
-    public function summariesForDatasources($datasources, $start, $end, $dayColumn = null)
+    public function summariesForDatasources($datasources, $start, $end, $dayColumn = null): ExtendedPromiseInterface
     {
         $pattern = $this->getPattern();
         $cmds = [];
@@ -72,45 +76,59 @@ class RrdSummary
             $cmds[] = $cmd;
         }
 
-        $rrd = $this->rrd;
-        $res = [];
         if ($dayColumn !== null) {
             $dayColumn = date('Y-m-d', $start);
         }
 
-        foreach ($rrd->runBulk($cmds) as $key => $stdout) {
-            if ($stdout === false) {
-                // printf("%s failed\n", $cmds[$key]);
-            } else {
-                // printf("%s SUCCEEDED\n", $cmds[$key]);
-                // echo $stdout;
+        return $this->rrd->sendMany($cmds)->then(function ($result) use ($datasources, $dayColumn) {
+            $res = [];
+            foreach ($result as $key => $stdout) {
+                if ($stdout === false) {
+                    // printf("%s failed\n", $cmds[$key]);
+                } else {
+                    // printf("%s SUCCEEDED\n", $cmds[$key]);
+                    // echo $stdout;
 
-                foreach (preg_split('/\n/', $stdout, -1, PREG_SPLIT_NO_EMPTY) as $line) {
-                    list($dsid, $what, $value) = preg_split('/ /', $line, 3);
-                    if (!is_numeric($dsid)) {
-                        // TODO: Should we fail here?
-                        echo $line . "\n";
-                        continue;
+                    foreach (preg_split('/\n/', $stdout, -1, PREG_SPLIT_NO_EMPTY) as $line) {
+                        if (count(preg_split('/ /', $line)) < 3) {
+                            var_dump($line);
+                            die();
+                        }
+                        try {
+                            list($dsid, $what, $value) = preg_split('/ /', $line, 3);
+                        } catch (\Exception $e) {
+                            var_dump($line);
+                            throw $e;
+                        }
+                        if (!is_numeric($dsid)) {
+                            // TODO: Should we fail here?
+                            echo $line . "\n";
+                            continue;
+                        }
+
+                        $filename = $datasources[$dsid]->filename;
+                        $dsname = $datasources[$dsid]->datasource;
+                        if (! isset($res[$filename][$dsname])) {
+                            $res[$filename][$dsname] = [];
+                        }
+
+                        // TODO: What about inf/-inf?
+                        if (strtolower($value) === 'nan' || strtolower($value) === '-nan') {
+                            $value = null;
+                        }
+
+                        // This is localized :-/
+                        if ($value === null) {
+                            $res[$filename][$dsname][$what . '_value'] = null;
+                        } else {
+                            $res[$filename][$dsname][$what . '_value'] = (float) str_replace(',', '.', $value);
+                        }
                     }
-
-                    $filename = $datasources[$dsid]->filename;
-                    $dsname = $datasources[$dsid]->datasource;
-                    if (! isset($res[$filename][$dsname])) {
-                        $res[$filename][$dsname] = [];
-                    }
-
-                    // TODO: What about inf/-inf?
-                    if (strtolower($value) === 'nan' || strtolower($value) === '-nan') {
-                        $value = null;
-                    }
-
-                    // This is localized :-/
-                    $res[$filename][$dsname][$what . '_value'] = (float) str_replace(',', '.', $value);
                 }
             }
-        }
 
-        return $res;
+            return $res;
+        });
     }
 
     protected function string($string)

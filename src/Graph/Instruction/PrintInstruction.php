@@ -45,7 +45,7 @@ class PrintInstruction extends Instruction
     protected $valstrfduration;
 
     // TODO: [:strftime|:valstrftime|:valstrfduration]
-    public function __construct($vname, $format)
+    public function __construct(string $vname, string $format)
     {
         $this->setVariableName($vname);
         $this->setFormat($format);
@@ -54,7 +54,7 @@ class PrintInstruction extends Instruction
     /**
      * @return string
      */
-    public function getVariableName()
+    public function getVariableName(): string
     {
         return $this->variableName;
     }
@@ -63,7 +63,7 @@ class PrintInstruction extends Instruction
      * @param string $variableName
      * @return $this
      */
-    public function setVariableName($variableName)
+    public function setVariableName(string $variableName): PrintInstruction
     {
         $this->variableName = $variableName;
         return $this;
@@ -72,7 +72,7 @@ class PrintInstruction extends Instruction
     /**
      * @return string
      */
-    public function getFormat()
+    public function getFormat(): string
     {
         return $this->format;
     }
@@ -81,7 +81,7 @@ class PrintInstruction extends Instruction
      * @param string $format
      * @return PrintInstruction
      */
-    public function setFormat($format)
+    public function setFormat(string $format): PrintInstruction
     {
         $this->format = $format;
         return $this;
@@ -90,7 +90,7 @@ class PrintInstruction extends Instruction
     /**
      * @return bool
      */
-    public function isStrftime()
+    public function isStrftime(): bool
     {
         return $this->strftime;
     }
@@ -99,7 +99,7 @@ class PrintInstruction extends Instruction
      * @param bool $strftime
      * @return $this
      */
-    public function setStrftime($strftime = true)
+    public function setStrftime(bool $strftime = true): PrintInstruction
     {
         $this->strftime = $strftime;
         return $this;
@@ -108,7 +108,7 @@ class PrintInstruction extends Instruction
     /**
      * @return bool
      */
-    public function isValstrftime()
+    public function isValstrftime(): bool
     {
         return $this->valstrftime;
     }
@@ -117,7 +117,7 @@ class PrintInstruction extends Instruction
      * @param bool $valstrftime
      * @return $this
      */
-    public function setValstrftime($valstrftime = true)
+    public function setValstrftime(bool $valstrftime = true): PrintInstruction
     {
         $this->valstrftime = $valstrftime;
         return $this;
@@ -150,6 +150,9 @@ class PrintInstruction extends Instruction
             . $this->getVariableName()
             . ':'
             . $this->getFormat()
+            // TODO: add a list of unnamed booleans. Means that former ones must be empty::
+
+            // NOPE: this is not correct, it is only one of those flags
             ;
     }
 }

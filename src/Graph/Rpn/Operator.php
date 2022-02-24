@@ -2,6 +2,8 @@
 
 namespace gipfl\RrdTool\Graph\Rpn;
 
+use InvalidArgumentException;
+
 class Operator
 {
     const KNOWN_OPERATORS = [
@@ -113,8 +115,20 @@ class Operator
      *
      * TODO: This is our arity. We have operators dealing with Sets and we have
      *       stack operators, both are a little bit... special. This needs improvement
-     *
-     * @var int|null
      */
-    protected $requiredElements;
+    protected ?int $requiredElements = null;
+
+    public function getRequiredElements(): ?int
+    {
+        return $this->requiredElements;
+    }
+
+    public static function getClass(string $operatorName): string
+    {
+        if (isset(self::KNOWN_OPERATORS[$operatorName])) {
+            return self::KNOWN_OPERATORS[$operatorName];
+        }
+
+        throw new InvalidArgumentException("'$operatorName' is not a known operator");
+    }
 }

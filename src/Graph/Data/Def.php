@@ -185,6 +185,9 @@ class Def extends Definition
         return $this;
     }
 
+    public static function parseExpression($string)
+    {
+    }
 
     protected function render()
     {

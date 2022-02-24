@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace gipfl\RrdTool\Graph\Instruction;
 
@@ -30,7 +30,7 @@ class Area extends DefinitionBasedInstruction
     /**
      * @return Color|null
      */
-    public function getSecondColor()
+    public function getSecondColor(): ?Color
     {
         return $this->color2;
     }
@@ -41,7 +41,7 @@ class Area extends DefinitionBasedInstruction
      * @param Color|string $color
      * @return $this
      */
-    public function setSecondColor($color)
+    public function setSecondColor($color): Area
     {
         if ($this->color->isNull()) {
             throw new InvalidArgumentException('Cannot set #color2 when no #color has been given');

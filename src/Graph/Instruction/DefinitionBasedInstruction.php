@@ -84,12 +84,14 @@ abstract class DefinitionBasedInstruction extends Instruction
 
     protected function renderFloat($number)
     {
-        if (\is_int($number)) {
+        if (is_float($number)) {
+            return \preg_replace('/(\..+?)0+$/', '\1', \sprintf('%.6F', $number));
+        } elseif (\is_int($number)) {
             return (string) $number;
         } elseif (\ctype_digit($number)) {
             return (string) (int) $number;
-        } else {
-            return \preg_replace('/(\..+?)0+$/', '\1', \sprintf('%.6F', $number));
         }
+
+        throw new \InvalidArgumentException("Number expected, got $number");
     }
 }

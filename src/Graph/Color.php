@@ -6,9 +6,9 @@ use InvalidArgumentException;
 
 class Color
 {
-    protected $hexCode;
+    protected ?string $hexCode = null;
 
-    protected $alpha;
+    protected ?string $alpha = null;
 
     public function __construct($hexCode, $alpha = null)
     {
@@ -41,7 +41,7 @@ class Color
         return $this->hexCode;
     }
 
-    public function setAlphaHex($alpha)
+    public function setAlphaHex(string $alpha)
     {
         $this->alpha = $alpha;
 

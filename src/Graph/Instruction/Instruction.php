@@ -2,6 +2,9 @@
 
 namespace gipfl\RrdTool\Graph\Instruction;
 
+use function addcslashes;
+use function strlen;
+
 abstract class Instruction
 {
     abstract protected function render();
@@ -11,25 +14,25 @@ abstract class Instruction
         return $this->render();
     }
 
-    public static function string($string)
+    public static function string(?string $string): ?string
     {
-        if ($string === null || \strlen($string) === 0) {
+        if ($string === null || strlen($string) === 0) {
             return null;
         }
 
         // if alnum -> just return it as is?
 
         // TODO: Check and fix
-        return "'" . \addcslashes($string, "':") . "'";
+        return "'" . addcslashes($string, "':") . "'";
     }
 
     /**
-     * @param $parameter
+     * @param ?string $parameter
      * @return string
      */
-    public static function optionalParameter($parameter)
+    public static function optionalParameter(?string $parameter): string
     {
-        if (\strlen($parameter)) {
+        if ($parameter !== null && strlen($parameter)) {
             return ":$parameter";
         } else {
             return '';
@@ -37,13 +40,13 @@ abstract class Instruction
     }
 
     /**
-     * @param $parameter
-     * @param $value
+     * @param string $parameter
+     * @param mixed $value
      * @return string
      */
-    public static function optionalNamedParameter($parameter, $value)
+    public static function optionalNamedParameter(string $parameter, $value): string
     {
-        if (\strlen($value)) {
+        if ($value !== null && strlen($value)) {
             return ":${parameter}=${value}";
         } else {
             return '';
@@ -51,11 +54,11 @@ abstract class Instruction
     }
 
     /**
-     * @param $parameter
-     * @param $value
+     * @param string $parameter
+     * @param bool|null $value
      * @return string
      */
-    public static function optionalNamedBoolean($parameter, $value)
+    public static function optionalNamedBoolean(string $parameter, ?bool $value): string
     {
         if ($value) {
             return ":${parameter}";

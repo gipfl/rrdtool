@@ -4,10 +4,6 @@ namespace gipfl\RrdTool\Graph\Rpn;
 
 class Expression
 {
-    const KNOWN_OPERATORS = [
-
-    ];
-
     /**
      * Expression constructor.
      * @param Operator $operator

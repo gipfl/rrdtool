@@ -12,10 +12,24 @@ use Psr\Log\NullLogger;
 use React\EventLoop\LoopInterface;
 use React\Promise\Deferred;
 use React\Promise\ExtendedPromiseInterface;
-use function React\Promise\Timer\timeout;
 use React\Socket\ConnectionInterface;
 use React\Socket\UnixConnector;
 use RuntimeException;
+use function array_map;
+use function array_shift;
+use function count;
+use function ctype_digit;
+use function implode;
+use function in_array;
+use function is_array;
+use function is_string;
+use function preg_match;
+use function preg_replace;
+use function React\Promise\Timer\timeout;
+use function rtrim;
+use function sort;
+use function strpos;
+use function substr;
 
 class Client
 {
@@ -29,11 +43,12 @@ class Client
     /** @var ConnectionInterface */
     protected $connection;
 
-    /** @var \React\Promise\Promise|null */
+    /** @var ?ExtendedPromiseInterface */
     protected $currentBatch;
 
     /** @var Deferred[] */
     protected $pending = [];
+    protected $pendingCommands = [];
 
     protected $pendingLines = [];
 
@@ -68,9 +83,9 @@ class Client
      * ];
      * </code>
      *
-     * @return \React\Promise\ExtendedPromiseInterface
+     * @return ExtendedPromiseInterface
      */
-    public function stats()
+    public function stats(): ExtendedPromiseInterface
     {
         return $this->send("STATS")->then(function ($result) {
             $pairs = [];
@@ -100,58 +115,52 @@ class Client
      * @param string|array $commands
      * @return ExtendedPromiseInterface
      */
-    public function batch($commands)
+    public function batch($commands): ExtendedPromiseInterface
     {
-        if ($this->currentBatch instanceof ExtendedPromiseInterface) {
-            /** @var ExtendedPromiseInterface $result */
-            $result = $this->currentBatch->then(function () use ($commands) {
-                // Logger::warning(
+        if ($this->currentBatch) {
+            return $this->currentBatch->then(function () use ($commands) {
+                // $this->logger->warning(
                 //     'RRDCacheD: a BATCH is already in progress, queuing up.'
                 //     . ' This could be a bug, please let us know!'
                 // );
 
                 return $this->batch($commands);
             });
-
-            return $result;
-        }
-
-        if ($this->currentBatch !== null) {
-            throw new \LogicException('RRDcacheD: current batch is neither a promise nor null');
         }
 
         // TODO: If a command manages it to be transmitted between "BATCH" and
         // it's commands, this could be an undesired race condition. We should
         // either combine both strings and parse two results - or implement some
         // other blocking logic.
-        if (\is_array($commands)) {
+        if (is_array($commands)) {
             if (empty($commands)) {
                 throw new RuntimeException('Cannot run BATCH with no command');
             }
-            $commands = \implode("\n", $commands) . "\n.";
+            $commands = implode("\n", $commands) . "\n.";
         } else {
-            $commands = \rtrim($commands, "\n") . "\n.";
+            $commands = rtrim($commands, "\n") . "\n.";
         }
 
         // BATCH gives: 0 Go ahead.  End with dot '.' on its own line.
-        $this->currentBatch = $this->send('BATCH')->then(function ($result) use ($commands) {
+        return $this->currentBatch = $this->send('BATCH')->then(function ($result) use ($commands) {
             return $this->send($commands)->then(function ($result) {
                 if ($result === 'errors' || $result === true) { // TODO: either one or the other
                     // Was: '0 errors'
                     return true;
                 }
-                if (\is_string($result)) {
+                if (is_string($result)) {
+                    $this->logger->debug('Unknown positive result string: ' . $result);
                     // Well... unknown string, but anyways - no error
                     return true;
                 }
-                if (\is_array($result)) {
+                if (is_array($result)) {
                     $res = [];
                     foreach ($result as $line) {
-                        if (\preg_match('/^(\d+)\s(.+)$/', $line, $match)) {
+                        if (preg_match('/^(\d+)\s(.+)$/', $line, $match)) {
                             $res[(int) $match[1]] = $match[2];
                         } else {
                             throw new RuntimeException(
-                                'Unexpected result from BATCH: ' . \implode("\n", $result) . "\n"
+                                'Unexpected result from BATCH: ' . implode('\\n', $result)
                             );
                         }
                     }
@@ -164,12 +173,6 @@ class Client
                 $this->currentBatch = null;
             });
         });
-
-        if ($this->currentBatch instanceof ExtendedPromiseInterface) {
-            return $this->currentBatch;
-        }
-
-        throw new \LogicException('RRDcacheD: current batch is not a promise');
     }
 
     /**
@@ -178,9 +181,9 @@ class Client
      * This doesn't mean that all files have been flushed, but that FLUSHALL has
      * successfully been started.
      *
-     * @return \React\Promise\ExtendedPromiseInterface
+     * @return ExtendedPromiseInterface
      */
-    public function flushAll()
+    public function flushAll(): ExtendedPromiseInterface
     {
         return $this->send("FLUSHALL")->then(function ($result) {
             // $result is 'Started flush.'
@@ -191,14 +194,14 @@ class Client
     /**
      * When resolved usually returns 'PONG'
      *
-     * @return \React\Promise\ExtendedPromiseInterface
+     * @return ExtendedPromiseInterface
      */
-    public function ping()
+    public function ping(): ExtendedPromiseInterface
     {
         return $this->send("PING");
     }
 
-    public function first($file, $rra = 0)
+    public function first(string $file, int $rra = 0): ExtendedPromiseInterface
     {
         $file = static::quoteFilename($file);
 
@@ -208,10 +211,10 @@ class Client
     }
 
     /**
-     * @param $file
-     * @return \React\Promise\ExtendedPromiseInterface
+     * @param string $file
+     * @return ExtendedPromiseInterface
      */
-    public function last($file)
+    public function last(string $file): ExtendedPromiseInterface
     {
         $file = static::quoteFilename($file);
 
@@ -223,11 +226,7 @@ class Client
         });
     }
 
-    /**
-     * @param $file
-     * @return \React\Promise\Promise
-     */
-    public function flush($file)
+    public function flush(string $file): ExtendedPromiseInterface
     {
         $file = static::quoteFilename($file);
 
@@ -237,28 +236,22 @@ class Client
         });
     }
 
-    /**
-     * @param $file
-     * @return \React\Promise\ExtendedPromiseInterface
-     */
-    public function forget($file)
+    public function forget(string $file): ExtendedPromiseInterface
     {
         $file = static::quoteFilename($file);
 
         return $this->send("FORGET $file")->then(function ($result) {
             // $result is 'Gone!'
+            var_dump('FORGOTTEN');
             return true;
         })->otherwise(function ($result) {
+            var_dump('NOT FORGOTTEN: ' . $result);
             // $result is 'No such file or directory'
             return false;
         });
     }
 
-    /**
-     * @param $file
-     * @return \React\Promise\ExtendedPromiseInterface
-     */
-    public function flushAndForget($file)
+    public function flushAndForget(string $file): ExtendedPromiseInterface
     {
         $file = static::quoteFilename($file);
 
@@ -267,7 +260,7 @@ class Client
         });
     }
 
-    public function pending($file)
+    public function pending(string $file): ExtendedPromiseInterface
     {
         $file = static::quoteFilename($file);
         return $this->send("PENDING $file")->then(function ($result) {
@@ -282,30 +275,27 @@ class Client
         });
     }
 
-    public function info($file)
+    public function info(string $file): ExtendedPromiseInterface
     {
         return $this->rawInfo($file)->then(function ($result) {
             return RrdInfo::parseLines($result);
         });
     }
 
-    public function rawInfo($file)
+    public function rawInfo(string $file): ExtendedPromiseInterface
     {
         $file = static::quoteFilename($file);
 
         return $this->send("INFO $file");
     }
 
-    /**
-     * @param $filename
-     * @param $step
-     * @param $start
-     * @param DsList $dsList
-     * @param RraSet $rraSet
-     * @return \React\Promise\Promise
-     */
-    protected function createFile($filename, $step, $start, DsList $dsList, RraSet $rraSet)
-    {
+    protected function createFile(
+        string $filename,
+        int $step,
+        int $start,
+        DsList $dsList,
+        RraSet $rraSet
+    ): ExtendedPromiseInterface {
         return $this->send(\sprintf(
             "CREATE %s -s %d -b %d %s %s",
             static::quoteFilename($filename),
@@ -316,14 +306,14 @@ class Client
         ));
     }
 
-    public static function quoteFilename($filename)
+    public static function quoteFilename(string $filename): string
     {
         // TODO: do we need to escape/quote here?
         return \addcslashes($filename, ' ');
         return "'" . addcslashes($filename, "'") . "'";
     }
 
-    public function listAvailableCommands()
+    public function listAvailableCommands(): ExtendedPromiseInterface
     {
         // This doesn't work!?
         // if ($this->availableCommands !== null) {
@@ -331,28 +321,28 @@ class Client
         // }
 
         return $this->availableCommands = $this->send("HELP")->then(function ($result) {
-            $result = \array_map(static function ($value) {
-                return \preg_replace('/\s.+$/', '', $value);
+            $result = array_map(static function ($value) {
+                return preg_replace('/\s.+$/', '', $value);
             }, $result);
-            \sort($result);
+            sort($result);
 
             return $result;
         });
     }
 
-    public function hasCommand($commandName)
+    public function hasCommand(string $commandName): ExtendedPromiseInterface
     {
         return $this
             ->listAvailableCommands()
             ->then(function ($commands) use ($commandName) {
-                return \in_array($commandName, $commands);
+                return in_array($commandName, $commands);
             });
     }
 
-    public function listRecursive($directory = '/')
+    public function listRecursive(string $directory = '/'): ExtendedPromiseInterface
     {
         return $this->send("LIST RECURSIVE $directory")->then(function ($result) {
-            \sort($result);
+            sort($result);
 
             return $result;
         });
@@ -365,15 +355,11 @@ class Client
         }
     }
 
-    /**
-     * @param $command
-     * @return \React\Promise\Promise
-     */
-    public function send($command)
+    public function send(string $command): ExtendedPromiseInterface
     {
+        $command = rtrim($command, "\n");
         $this->pending[] = $deferred = new Deferred();
-
-        $command = \rtrim($command, "\n") . "\n";
+        $this->pendingCommands[] = $command;
         // Logger::debug
         // echo "Sending $command\n";
 
@@ -383,15 +369,15 @@ class Client
         if ($this->connection === null) {
             $this->logger->debug("Not yet connected, deferring $command");
             $this->connect()->then(function () use ($command, $deferred) {
-                $this->logger->debug('Connected to RRDCacheD, now sending ' . trim($command));
-                $this->connection->write("$command");
+                $this->logger->debug("Connected to RRDCacheD, now sending $command");
+                $this->connection->write("$command\n");
             })->otherwise(function (Exception $error) use ($deferred) {
                 $this->logger->error('Connection to RRDCacheD failed');
                 $deferred->reject($error);
             });
         } else {
             // TODO: Drain if false?
-            $this->connection->write("$command");
+            $this->connection->write("$command\n");
         }
 
         // Hint: used to be 5s, too fast?
@@ -433,6 +419,10 @@ class Client
             $this->processData($data);
         });
 
+        $connection->on('error', function (\Throwable $e) {
+            var_dump($e->getMessage());
+            exit;
+        });
         // $connection->on('error', fail all pending, reconnect?)
     }
 
@@ -446,14 +436,14 @@ class Client
     {
         $offset = 0;
 
-        while (false !== ($pos = \strpos($this->buffer, "\n", $offset))) {
-            $line = \substr($this->buffer, $offset, $pos - $offset);
+        while (false !== ($pos = strpos($this->buffer, "\n", $offset))) {
+            $line = substr($this->buffer, $offset, $pos - $offset);
             $offset = $pos + 1;
             $this->bufferLines[] = $line;
         }
 
         if ($offset > 0) {
-            $this->buffer = \substr($this->buffer, $offset);
+            $this->buffer = substr($this->buffer, $offset);
         }
 
         $this->checkForResults();
@@ -463,16 +453,16 @@ class Client
     {
         while (! empty($this->bufferLines)) {
             $current = $this->bufferLines[0];
-            $pos = \strpos($current, ' ');
+            $pos = strpos($current, ' ');
             if ($pos === false) {
                 $this->failForProtocolViolation();
             }
-            $cntLines = \substr($current, 0, $pos);
-            // echo "< " . $current . "\n";
+            $cntLines = substr($current, 0, $pos);
+            // $this->logger->debug("< $current");
             if ($cntLines === '-1') {
-                \array_shift($this->bufferLines);
-                $this->rejectNextPending(\substr($current, $pos + 1));
-            } elseif (\ctype_digit($cntLines)) {
+                array_shift($this->bufferLines);
+                $this->rejectNextPending(substr($current, $pos + 1));
+            } elseif (ctype_digit($cntLines)) {
                 $cntLines = (int) $cntLines;
 
                 if ($cntLines === 0) {
@@ -480,8 +470,8 @@ class Client
                         $this->failForProtocolViolation();
                     }
 
-                    \array_shift($this->bufferLines);
-                    $result = \substr($current, $pos + 1);
+                    array_shift($this->bufferLines);
+                    $result = substr($current, $pos + 1);
                     if ($result === 'errors') { // Output: 0 errors
                         $result = true;
                     }
@@ -489,7 +479,7 @@ class Client
 
                     continue;
                 }
-                if (\count($this->bufferLines) <= $cntLines) {
+                if (count($this->bufferLines) <= $cntLines) {
                     // We'll wait, there are more lines to come
                     return;
                 }
@@ -498,15 +488,15 @@ class Client
                     $this->failForProtocolViolation();
                 }
 
-                \array_shift($this->bufferLines);
+                array_shift($this->bufferLines);
                 $result = [];
                 for ($i = 0; $i < $cntLines; $i++) {
-                    $result[] = \array_shift($this->bufferLines);
+                    $result[] = array_shift($this->bufferLines);
                 }
 
                 $this->resolveNextPending($result);
             } else {
-                \array_shift($this->bufferLines);
+                array_shift($this->bufferLines);
                 $this->failForProtocolViolation();
             }
         }
@@ -517,15 +507,17 @@ class Client
         if (empty($this->pending)) {
             $this->failForProtocolViolation();
         }
-        $next = \array_shift($this->pending);
+        $next = array_shift($this->pending);
+        array_shift($this->pendingCommands);
         $next->resolve($result);
     }
 
     protected function rejectNextPending($message)
     {
-        $next = \array_shift($this->pending);
-        $this->logger->debug("Rejecting: $message");
-        $next->reject(new RuntimeException($message));
+        $next = array_shift($this->pending);
+        $command = array_shift($this->pendingCommands);
+        $command = preg_replace('/\s.*$/', '', $command);
+        $next->reject(new RuntimeException("$command: $message"));
     }
 
     protected function failForProtocolViolation()
@@ -536,13 +528,13 @@ class Client
         unset($this->connection);
     }
 
-    protected function getFullBuffer()
+    protected function getFullBuffer(): string
     {
         if (empty($this->bufferLines)) {
             return $this->buffer;
         }
 
-        return \implode("\n", $this->bufferLines) . "\n" . $this->buffer;
+        return implode("\n", $this->bufferLines) . "\n" . $this->buffer;
     }
 
     protected function rejectAllPending(Exception $exception)

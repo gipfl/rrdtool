@@ -6,8 +6,7 @@ use gipfl\RrdTool\RrdGraph;
 
 class DefaultGraph extends Template
 {
-    /** @var string  */
-    protected $color = '0095BF'; // @icinga-blue
+    protected string $color = '0095BF'; // @icinga-blue
 
     public function applyToGraph(RrdGraph $graph)
     {
@@ -28,6 +27,7 @@ class DefaultGraph extends Template
             $graph->addCriticalRule($value);
         }
         // $graph->addPacketLoss($file, 2);
+        $graph->line1($graph->cdef($graph->def($filename, $ds, 'AVERAGE') . ',0,*'), '00000000');
 
         if ($smoke) {
             $this->addSmoke($graph, $filename, $ds, $color, $showMaxPercentile);

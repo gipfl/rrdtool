@@ -9,8 +9,12 @@ class TemplateLoader
         switch ($template) {
             case 'interface':
                 return new InterfaceGraph($filename);
+            case 'ointerface':
+                return new OctetsInterfaceGraph($filename);
             case 'load':
                 return new LoadGraph($filename);
+            case 'ido':
+                return new IdoGraph($filename);
             case 'pnp_interfaces':
                 return new PnpInterfaceGraph($filename);
             case 'RRDHealth':

@@ -22,7 +22,7 @@ class CpuMetricsGraph extends Template
 
         foreach ($parts as $ds => $color) {
             $def = $graph->def($filename, $ds, 'AVERAGE');
-            $graph->area($def, $color, $ds !== 1);
+            $graph->area($def, $color, $ds !== '1');
         }
     }
 }

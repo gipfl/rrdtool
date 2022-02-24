@@ -14,94 +14,50 @@ use gipfl\RrdTool\Graph\Instruction\PrintInstruction;
 
 class RrdGraph
 {
-    /** @var int */
-    protected $width = 840;
-
-    /** @var int */
-    protected $height= 300;
-
-    /** @var int */
-    protected $start;
-
-    /** @var int */
-    protected $end;
-
-    protected $format = 'PNG';
+    protected int $width = 840;
+    protected int $height= 300;
+    protected int $start;
+    protected int $end;
+    protected string $format = 'PNG';
 
     /** @var Instruction[] */
-    protected $instructions = [];
-
-    /** @var bool */
-    protected $onlyGraph;
-
-    /** @var string */
-    protected $title;
-
+    protected array $instructions = [];
+    protected ?bool $onlyGraph = null;
+    protected ?string $title = null;
     /** @var string[] */
-    protected $defs = [];
-
+    protected array $defs = [];
     /** @var string[] */
-    protected $cdefs = [];
-
+    protected array $cdefs = [];
     /** @var string[] */
-    protected $vdefs = [];
-
+    protected array $vdefs = [];
     /** @var string[] */
-    protected $usedAliases = [];
-
-    protected $printLabels = [];
-
-    /** @var int */
-    protected $border = 0;
-
-    /** @var bool */
-    protected $fullSizeMode = true;
+    protected array $usedAliases = [];
+    protected array $printLabels = [];
+    protected int $border = 0;
+    protected bool $fullSizeMode = true;
 
     /** @var string 1:0 = lines */
-    protected $gridDash = '3:0';
+    protected string $gridDash = '3:0';
 
     /** @var string  numeric, timestamp, duration */
-    protected $leftAxisFormatter = 'numeric';
+    protected string $leftAxisFormatter = 'numeric';
 
     // 10 * 1024 * 1024 * 1024;
     // 1 * 1024 * 1024 * 1024;
     // 100 * 1024 * 1024;
-    /** @var int */
-    protected $upperLimit;
+    protected ?int $upperLimit = null;
+    protected ?int $lowerLimit = null;
+    protected bool $rigid = false;
+    protected bool $useNanForAllMissingData = false;
+    protected bool $enableRrdToolTag = false;
+    protected ?string $watermark = null;
+    protected bool $slopeMode = false;
+    protected ?Color $textColor = null;
+    protected bool $disableCached = false;
+    protected ?int $step = null;
+    protected bool $darkTheme = false;
 
-    /** @var int */
-    protected $lowerLimit;
-
-    /** @var bool */
-    protected $rigid = false;
-
-    /** @var bool */
-    protected $useNanForAllMissingData = false;
-
-    /** @var bool */
-    protected $enableRrdToolTag = false;
-
-    /** @var string|null */
-    protected $watermark;
-
-    /** @var bool */
-    protected $slopeMode = false;
-
-    /** @var Color|null */
-    protected $textColor;
-
-    protected $disableCached = false;
-
-    /** @var int|null */
-    protected $step = null;
-
-    /** @var bool */
-    protected $darkTheme = false;
-
-    /**
-     * @return int
-     */
-    public function getStart()
+    public function getStart(): int
     {
         return $this->start;
     }
@@ -112,6 +68,14 @@ class RrdGraph
      */
     public function setStart($start)
     {
+        // 1990
+        if ($start < 631152000) {
+            throw new \RuntimeException(sprintf(
+                "Beginning a graph on %s (%s) seems not plausible",
+                @date('Y-m-d H:i:s', $start),
+                $start
+            ));
+        }
         $this->start = $start;
         return $this;
     }
@@ -124,12 +88,16 @@ class RrdGraph
         return $this->end;
     }
 
-    /**
-     * @param int $end
-     * @return RrdGraph
-     */
-    public function setEnd($end)
+    public function setEnd(int $end): RrdGraph
     {
+        // 2030
+        if ($end > 1893456000) {
+            throw new \RuntimeException(sprintf(
+                "Ending a graph on %s (%s) seems not plausible",
+                @date('Y-m-d H:i:s', $end),
+                $end
+            ));
+        }
         $this->end = $end;
         return $this;
     }
@@ -359,6 +327,9 @@ class RrdGraph
 
     protected function string($string)
     {
+        if ($string === null) {
+            return "''";
+        }
         // TODO: Check and fix
         return "'" . addcslashes($string, "':") . "'";
     }
@@ -581,7 +552,7 @@ class RrdGraph
         return $params;
     }
 
-    protected function stringOrNull($string)
+    protected function stringOrNull($string): ?string
     {
         if ($string === null || strlen($string) === 0) {
             return null;
@@ -590,10 +561,7 @@ class RrdGraph
         return $this->string($string);
     }
 
-    /**
-     * @return int
-     */
-    public function getBorder()
+    public function getBorder(): int
     {
         return $this->border;
     }

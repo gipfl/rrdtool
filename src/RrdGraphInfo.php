@@ -2,6 +2,7 @@
 
 namespace gipfl\RrdTool;
 
+use gipfl\RrdTool\RenderedGraph\GraphInfo;
 use InvalidArgumentException;
 use RuntimeException;
 
@@ -77,8 +78,11 @@ class RrdGraphInfo
         image = BLOB_SIZE:1229123
          */
 
+        $info = new GraphInfo(); // TODO?
         $props = [
             'print' => [],
+            'coords' => [],
+            'legend' => [],
             'headerLength' => 0,
             'imageSize' => 0,
         ];
@@ -125,11 +129,18 @@ class RrdGraphInfo
                     }
                 }
                 $props['print'][$key] = $value;
+            } elseif (\preg_match('/^legend\[(\d+)]\s=\s(.+)$/', $line, $match)) {
+                $key = $match[1];
+                $value = $match[2];
+                $props['legend'][$key] = $value;
+            } elseif (\preg_match('/^coords\[(\d+)]\s=\s(.+)$/', $line, $match)) {
+                $key = $match[1];
+                $value = $match[2];
+                $props['coords'][$key] = array_map('intval', explode(',', $value));
             } elseif (/*$pos === 0 &&*/ preg_match('/^OK /', $line)) {
                 $props['ok_line'] = $line;
                 return $props;
             } else {
-\Icinga\Application\Logger::error($image);
                 throw new RuntimeException("Unable to parse rrdgraph info line: '$line'");
             }
         }

@@ -3,7 +3,9 @@
 namespace gipfl\RrdTool;
 
 // DS:ds-name[=mapped-ds-name[[source-index]]]:DST:dst arguments
-class Ds
+use gipfl\Json\JsonSerialization;
+
+class Ds implements JsonSerialization
 {
     /**
      * ds-name must be 1 to 19 characters long, allowed chars: [a-zA-Z0-9_]
@@ -126,5 +128,29 @@ class Ds
             $this->heartbeat,
             $dsParams
         );
+    }
+
+    public static function fromSerialization($any)
+    {
+        return new static(
+            $any->name,
+            $any->type,
+            $any->heartbeat,
+            $any->min ?? null,
+            $any->max ?? null,
+            $any->alias ?? null,
+        );
+    }
+
+    public function jsonSerialize(): object
+    {
+        return (object) [
+            'name'       => $this->name,
+            'type'       => $this->type,
+            'heartbeat'  => $this->heartbeat,
+            'min'        => $this->min,
+            'max'        => $this->max,
+            'alias'      => $this->alias,
+        ];
     }
 }

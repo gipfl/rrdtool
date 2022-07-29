@@ -2,9 +2,10 @@
 
 namespace gipfl\RrdTool;
 
+use gipfl\Json\JsonSerialization;
 use InvalidArgumentException;
 
-class RraSet
+class RraSet implements JsonSerialization
 {
     /** @var Rra[] */
     protected array $rras = [];
@@ -85,5 +86,19 @@ class RraSet
         }
 
         return $rraIdx;
+    }
+
+    public static function fromSerialization($any)
+    {
+        if (is_array($any)) {
+            return new static($any);
+        }
+
+        return static::fromString($any);
+    }
+
+    public function jsonSerialize(): string
+    {
+        return $this->toString();
     }
 }

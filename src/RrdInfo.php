@@ -2,6 +2,7 @@
 
 namespace gipfl\RrdTool;
 
+use gipfl\Json\JsonSerialization;
 use InvalidArgumentException;
 use RuntimeException;
 use function ctype_digit;
@@ -18,7 +19,7 @@ use function trim;
 // [--source|-r source-file] [--no-overwrite|-O] [--daemon|-d address]
 // [DS:ds-name[=mapped-ds-name[[source-index]]]:DST:dst arguments]
 // [RRA:CF:cf arguments]
-class RrdInfo
+class RrdInfo implements JsonSerialization
 {
     const FORMAT_RRDTOOL = 1;
     const FORMAT_RRDCACHED = 2;
@@ -274,5 +275,36 @@ class RrdInfo
 
             $array[$type][$idx][$key] = $value;
         }
+    }
+
+    public static function fromSerialization($any)
+    {
+        $self = new static(
+            $any->filename,
+            $any->step,
+            DsList::fromSerialization($any->ds),
+            RraSet::fromSerialization($any->rra)
+        );
+
+        if (isset($any->rrdVersion)) {
+            $self->rrdVersion = $any->rrdVersion;
+        }
+        if (isset($any->lastUpdate)) {
+            $self->lastUpdate = $any->lastUpdate;
+        }
+
+        return $self;
+    }
+
+    public function jsonSerialize(): object
+    {
+        return (object) [
+            'filename'   => $this->filename,
+            'step'       => $this->step,
+            'ds'         => $this->dsList,
+            'rra'        => $this->rra,
+            'rrdVersion' => $this->rrdVersion,
+            'lastUpdate' => $this->lastUpdate,
+        ];
     }
 }

@@ -2,10 +2,11 @@
 
 namespace gipfl\RrdTool;
 
+use gipfl\Json\JsonSerialization;
 use RuntimeException;
 use function implode;
 
-class DsList
+class DsList implements JsonSerialization
 {
     /** @var Ds[] */
     protected array $list = [];
@@ -77,5 +78,15 @@ class DsList
         }
 
         return implode(' ', $this->list);
+    }
+
+    public static function fromSerialization($any)
+    {
+        return new static((array) $any);
+    }
+
+    public function jsonSerialize(): array
+    {
+        return $this->list;
     }
 }

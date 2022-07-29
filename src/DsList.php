@@ -49,6 +49,11 @@ class DsList implements JsonSerialization
         return \array_keys($this->list);
     }
 
+    public function hasName(string $name): bool
+    {
+        return isset($this->list[$name]);
+    }
+
     public function applyAliasesMap(array $map)
     {
         foreach ($map as $alias => $name) {

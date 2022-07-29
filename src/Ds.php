@@ -22,14 +22,24 @@ class Ds implements JsonSerialization
     protected ?int $max = null;
 
     protected ?string $alias = null;
+    protected ?string $mappedName = null;
 
-    public function __construct(string $name, string $type, int $heartbeat, ?int $min = null, ?int $max = null)
-    {
+    public function __construct(
+        string  $name,
+        string  $type,
+        int     $heartbeat,
+        ?int    $min = null,
+        ?int    $max = null,
+        ?string $mappedName = null,
+        ?string $alias = null
+    ) {
         $this->name = $name;
         $this->type = $type;
         $this->heartbeat = $heartbeat;
         $this->min  = $min;
         $this->max  = $max;
+        $this->mappedName = $mappedName;
+        $this->alias = $alias;
     }
 
     public static function fromString($string): Ds
@@ -91,9 +101,11 @@ class Ds implements JsonSerialization
         return $this->max;
     }
 
-    /**
-     * @return string|null
-     */
+    public function getMappedName(): ?string
+    {
+        return $this->mappedName;
+    }
+
     public function getAlias(): ?string
     {
         return $this->alias;
@@ -123,7 +135,7 @@ class Ds implements JsonSerialization
 
         return \sprintf(
             "DS:%s:%s:%d:%s",
-            $this->name,
+            $this->name . ($this->mappedName ? '=' . $this->mappedName : ''),
             $this->type,
             $this->heartbeat,
             $dsParams
@@ -138,6 +150,7 @@ class Ds implements JsonSerialization
             $any->heartbeat,
             $any->min ?? null,
             $any->max ?? null,
+            $any->mappedName ?? null,
             $any->alias ?? null,
         );
     }
@@ -151,6 +164,7 @@ class Ds implements JsonSerialization
             'min'        => $this->min,
             'max'        => $this->max,
             'alias'      => $this->alias,
+            'mappedName' => $this->mappedName,
         ];
     }
 }

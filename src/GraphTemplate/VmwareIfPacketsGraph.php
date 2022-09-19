@@ -32,11 +32,11 @@ class VmwareIfPacketsGraph extends Template
             }
         }
         foreach (['Rx', 'Tx'] as $dir) {
-            $packets = $cdefs["packets${dir}"];
-            $multicast = $cdefs["multicast${dir}"];
-            $broadcast = $cdefs["broadcast${dir}"];
+            $packets = $cdefs["packets$dir"];
+            $multicast = $cdefs["multicast$dir"];
+            $broadcast = $cdefs["broadcast$dir"];
             $unicast = $graph->cdef("$packets,$multicast,-,$broadcast,-");
-            $cdefs["unicast${dir}"] = $unicast;
+            $cdefs["unicast$dir"] = $unicast;
         }
         // Stack, order matters!
         $colors = [

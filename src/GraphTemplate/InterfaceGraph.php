@@ -119,8 +119,8 @@ class InterfaceGraph extends Template
         list($defAvg, $defMin, $defMax) = $this->avgMinMax($graph, $filename, $ds);
         list($defAvg, $defMin, $defMax)
             = $this->multipleMultiply($graph, $this->multiplier, $defAvg, $defMin, $defMax);
-        $avgStep = $graph->cdef("${defAvg},${defMin},-,${steps},/", 'avgstep');
-        $maxStep = $graph->cdef("${defMax},${defAvg},-,${steps},/", 'maxstep');
+        $avgStep = $graph->cdef("$defAvg,$defMin,-,$steps,/", 'avgstep');
+        $maxStep = $graph->cdef("$defMax,$defAvg,-,$steps,/", 'maxstep');
         // TODO: class for Datasource, allow to mirror ...
     }
 
@@ -168,7 +168,7 @@ class InterfaceGraph extends Template
 
         // The real line
         $graph->line1($defAvg, $color . 'ff');
-        $graph->add(new Area($defAvg, "${color}33"));
+        $graph->add(new Area($defAvg, "{$color}33"));
     }
 
     protected function fadingStepsUp(Color $color, $steps): Generator

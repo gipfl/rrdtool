@@ -47,7 +47,7 @@ abstract class Instruction
     public static function optionalNamedParameter(string $parameter, $value): string
     {
         if ($value !== null && strlen($value)) {
-            return ":${parameter}=${value}";
+            return ":$parameter=$value";
         } else {
             return '';
         }
@@ -61,7 +61,7 @@ abstract class Instruction
     public static function optionalNamedBoolean(string $parameter, ?bool $value): string
     {
         if ($value) {
-            return ":${parameter}";
+            return ":$parameter";
         } else {
             return '';
         }

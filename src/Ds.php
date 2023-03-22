@@ -5,6 +5,8 @@ namespace gipfl\RrdTool;
 // DS:ds-name[=mapped-ds-name[[source-index]]]:DST:dst arguments
 use gipfl\Json\JsonSerialization;
 
+use function explode;
+
 class Ds implements JsonSerialization
 {
     /**
@@ -44,7 +46,7 @@ class Ds implements JsonSerialization
 
     public static function fromString($string): Ds
     {
-        $parts = preg_split('/:/', $string);
+        $parts = explode(':', $string);
         if (count($parts) < 4) {
             throw new \InvalidArgumentException("Valid DataSource expected, got $string");
         }

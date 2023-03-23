@@ -49,6 +49,20 @@ class RrdGraphInfo
                 return 'image/svg+xml';
             case 'PNG':
                 return 'image/png';
+            case 'JSON':
+            case 'JSONTIME':
+                return 'application/json';
+            case 'CSV': // comma-separated
+            case 'SSV': // semicolon-separated
+            case 'TSV': // tab-separated
+                return 'text/csv';
+            case 'XML':
+            case 'XMLENUM':
+                return 'application/xml';
+            case 'PDF':
+                return 'application/pdf';
+            case 'EPS':
+                return 'application/postscript';
             default:
                 throw new InvalidArgumentException(sprintf(
                     'RrdGraph format %s is not supported',

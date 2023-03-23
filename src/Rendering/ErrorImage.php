@@ -8,9 +8,7 @@ class ErrorImage
 {
     /** @var Exception|string */
     protected $error;
-
-    /** @var bool */
-    protected $showStackTrace = false;
+    protected bool $showStackTrace = false;
 
     /**
      * @param Exception|string $error
@@ -20,18 +18,12 @@ class ErrorImage
         $this->error = $error;
     }
 
-    /**
-     * @param bool $show
-     * @return $this
-     */
-    public function showStackTrace($show = true)
+    public function showStackTrace(bool $show = true): void
     {
         $this->showStackTrace = (bool) $show;
-
-        return $this;
     }
 
-    protected function shortenFileInTrace($file)
+    protected function shortenFileInTrace(string $file): string
     {
         return preg_replace(
             '_^(#\d+)\s+/.+?/(?:vendor|application|library)/_m',
@@ -40,7 +32,7 @@ class ErrorImage
         );
     }
 
-    protected function shortenFile($file)
+    protected function shortenFile(string $file): string
     {
         return preg_replace(
             '_^/.+?/(?:vendor|application|library)/_m',
@@ -49,7 +41,7 @@ class ErrorImage
         );
     }
 
-    public function render($width, $height)
+    public function render($width, $height): string
     {
         $error = $this->error;
         if ($error instanceof Exception) {
@@ -115,9 +107,9 @@ class ErrorImage
         return $image;
     }
 
-    public function renderToJson($width, $height)
+    public function renderToJson($width, $height): object
     {
-        return [
+        return (object) [
             'graph' => [],
             'image' => ['width' => $width, 'height' => $height],
             'value' => [],

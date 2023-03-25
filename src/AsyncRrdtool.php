@@ -5,6 +5,7 @@ namespace gipfl\RrdTool;
 use Exception;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
+use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use React\ChildProcess\Process;
 use React\Promise\Deferred;
@@ -13,43 +14,29 @@ use React\Promise\Timer;
 use React\Stream\WritableResourceStream;
 use RuntimeException;
 use SplDoublyLinkedList;
+use function substr;
 
 class AsyncRrdtool implements LoggerAwareInterface
 {
     use LoggerAwareTrait;
 
-    /** @var string */
-    protected $basedir;
+    const EOL = "\n";
+    const IMAGE_BLOB_PREFIX = 'image = BLOB_SIZE:';
+    const IMAGE_BLOB_PREFIX_LENGTH = 18;
 
-    /** @var string */
-    protected $rrdtool;
-
-    /** @var string|null RRDCacheD socket path */
-    protected $socket;
-
-    /** @var Process */
-    protected $process;
-
-    protected $cmdCount;
-
-    protected $maxCmds = 10000;
-
-    protected $terminating = false;
-
-    /** @var string */
-    protected $buffer = '';
-    protected $currentBuffer = '';
-
-    /** @var SplDoublyLinkedList */
-    protected $pending;
-
-    protected $processStatsLine;
-
-    protected $logCommunication = false;
-
-    protected $spentTimings;
-
-    protected $pendingImageBytes = null;
+    protected string $basedir;
+    protected string $rrdtool;
+    protected ?string $socket = null; // RRDCacheD socket path
+    protected ?Process $process = null;
+    protected bool $terminating = false;
+    protected bool $logCommunication = false;
+    protected string $buffer = '';
+    protected string $currentBuffer = '';
+    /** @var SplDoublyLinkedList<Deferred> */
+    protected SplDoublyLinkedList $pending;
+    protected ?TimeStatistics $spentTimings = null;
+    protected ?string $processStatsLine = null;
+    protected ?int $pendingImageBytes = null;
 
     public function __construct(string $basedir, string $rrdtool = '/usr/bin/rrdtool', string $socket = null)
     {
@@ -68,10 +55,10 @@ class AsyncRrdtool implements LoggerAwareInterface
     }
 
     /**
-     * @param array $fileNames
-     * @return \React\Promise\Promise
+     * @param array<int|string, string> $fileNames
+     * @return ExtendedPromiseInterface<array <string|int, RrdInfo>>
      */
-    public function infoForMany(array $fileNames)
+    public function infoForMany(array $fileNames): ExtendedPromiseInterface
     {
         $commands = [];
         foreach ($fileNames as $key => $filename) {
@@ -92,26 +79,22 @@ class AsyncRrdtool implements LoggerAwareInterface
         });
     }
 
-    /**
-     * @return Process
-     */
-    protected function getProcess()
+    protected function getProcess(): Process
     {
         if ($this->process === null) {
             $this->startRrdTool();
-            // TODO: Not German!
             // $this->process = $this->getWatchDog()->getProcess();
         }
 
         return $this->process;
     }
 
-    public function getBasedir()
+    public function getBasedir(): string
     {
         return $this->basedir;
     }
 
-    protected function getEnv()
+    protected function getEnv(): array
     {
         // RRDCACHED_ADDRESS:
         $env = [
@@ -182,7 +165,7 @@ class AsyncRrdtool implements LoggerAwareInterface
         $this->process = $process;
     }
 
-    protected function processData($data)
+    protected function processData(string $data): void
     {
         if ($this->logCommunication) {
             $this->logger->debug("< $data");
@@ -191,7 +174,7 @@ class AsyncRrdtool implements LoggerAwareInterface
         $this->processBuffer();
     }
 
-    protected function processStdErr($data)
+    protected function processStdErr($data): void
     {
         $this->logger->error("STDERR << $data");
     }
@@ -223,7 +206,6 @@ class AsyncRrdtool implements LoggerAwareInterface
     protected function processBuffer()
     {
         $blobPrefix = 'image = BLOB_SIZE:';
-        $eol = "\n";
         if ($this->pendingImageBytes) {
             $this->consumeBinaryBuffer();
         }
@@ -232,42 +214,42 @@ class AsyncRrdtool implements LoggerAwareInterface
         }
 
         $offset = 0;
-        while (false !== ($pos = \strpos($this->buffer, $eol, $offset))) {
-            $line = \substr($this->buffer, $offset, $pos - $offset);
+        while (false !== ($pos = \strpos($this->buffer, self::EOL, $offset))) {
+            $line = substr($this->buffer, $offset, $pos - $offset);
             $offset = $pos + 1;
 
             // Let's handle valid results
-            if (\substr($line, 0, 3) === 'OK ') {
+            if (substr($line, 0, 3) === 'OK ') {
                 // OK u:1.14 s:0.07 r:1.21
                 // Might be 1,14 with different locale
-                $this->processStatsLine = \substr($line, 3);
-                $this->parseTimings($line);
+                $this->processStatsLine = substr($line, 3);
+                $this->spentTimings = self::parseTimings($line, $this->logger);
                 // TODO: add "\n" ?
                 $this->logger->info(sprintf('Got OK, resolving with %dbytes', strlen($this->currentBuffer)));
                 $this->resolveNextPending($this->currentBuffer);
                 $this->currentBuffer = '';
-            } elseif (\substr($line, 0, 7) === 'ERROR: ') {
+            } elseif (substr($line, 0, 7) === 'ERROR: ') {
                 $this->rejectNextPending($line);
                 $this->currentBuffer = '';
-            } elseif (substr($line, 0, strlen($blobPrefix)) === $blobPrefix) {
-                $this->pendingImageBytes = (int) substr($line, strlen($blobPrefix));
-                $this->logger->info(sprintf('Waiting for an image, %dbytes: %s', $this->pendingImageBytes, $line));
-                $this->currentBuffer .= $line . $eol;
-                $this->buffer = \substr($this->buffer, $offset);
+            } elseif (substr($line, 0, self::IMAGE_BLOB_PREFIX_LENGTH) === self::IMAGE_BLOB_PREFIX) {
+                $this->pendingImageBytes = (int) substr($line, self::IMAGE_BLOB_PREFIX_LENGTH);
+                $this->logger->debug(sprintf('Waiting for an image, %dbytes: %s', $this->pendingImageBytes, $line));
+                $this->currentBuffer .= $line . self::EOL;
+                $this->buffer = substr($this->buffer, $offset);
                 $this->consumeBinaryBuffer();
                 $this->processBuffer();
                 return;
             } else {
-                $this->currentBuffer .= $line . $eol;
+                $this->currentBuffer .= $line . self::EOL;
             }
         }
 
         if ($offset !== 0) {
-            $this->buffer = \substr($this->buffer, $offset);
+            $this->buffer = substr($this->buffer, $offset);
         }
     }
 
-    public function getTotalSpentTimings()
+    public function getTotalSpentTimings(): TimeStatistics
     {
         return $this->spentTimings;
     }
@@ -280,27 +262,27 @@ class AsyncRrdtool implements LoggerAwareInterface
      *
      * @param $line
      */
-    protected function parseTimings($line)
+    protected static function parseTimings($line, LoggerInterface $logger): ?TimeStatistics
     {
         if (preg_match('/^OK\su:([0-9.,]+)\ss:([0-9.,]+)\sr:([0-9.,]+)$/', $line, $m)) {
-            $this->spentTimings = (object) [
-                'user' => static::parseLocalizedFloat($m[1]),
-                'system' => static::parseLocalizedFloat($m[2]),
-                'real' => static::parseLocalizedFloat($m[3]),
-            ];
+            return new TimeStatistics(
+                static::parseLocalizedFloat($m[1]),
+                static::parseLocalizedFloat($m[2]),
+                static::parseLocalizedFloat($m[3])
+            );
         } else {
-            $this->logger->error("Invalid timings: $line");
-            $this->spentTimings = null;
+            $logger->error("Invalid timings: $line");
+            return null;
         }
     }
 
     // duplicate
-    public static function parseLocalizedFloat($string)
+    public static function parseLocalizedFloat($string): float
     {
         return (float) \str_replace(',', '.', $string);
     }
 
-    public function endProcess()
+    public function endProcess(): void
     {
         if ($this->process) {
             $this->terminating = true;
@@ -313,9 +295,9 @@ class AsyncRrdtool implements LoggerAwareInterface
 
     /**
      * @param array $commands
-     * @return \React\Promise\Promise
+     * @return ExtendedPromiseInterface
      */
-    public function sendMany(array $commands)
+    public function sendMany(array $commands): ExtendedPromiseInterface
     {
         $results = [];
         $pending = [];
@@ -342,11 +324,7 @@ class AsyncRrdtool implements LoggerAwareInterface
         return $deferred->promise();
     }
 
-    /**
-     * @param $command
-     * @return ExtendedPromiseInterface
-     */
-    public function send($command): ExtendedPromiseInterface
+    public function send(string $command): ExtendedPromiseInterface
     {
         $this->pending->push($deferred = new Deferred());
 
@@ -360,17 +338,7 @@ class AsyncRrdtool implements LoggerAwareInterface
         return Timer\timeout($deferred->promise(), 3);
     }
 
-    protected function resolveNextPending($result)
-    {
-        $this->pending->shift()->resolve($result);
-    }
-
-    protected function rejectNextPending($message)
-    {
-        $this->pending->shift()->reject(new RuntimeException($message));
-    }
-
-    protected function failForProtocolViolation()
+    protected function failForProtocolViolation(): void
     {
         $exception = new RuntimeException('Protocol exception, got: ' . $this->getFullBuffer());
         $this->rejectAllPending($exception);
@@ -386,7 +354,19 @@ class AsyncRrdtool implements LoggerAwareInterface
         return $this->currentBuffer . "\n" . $this->buffer;
     }
 
-    protected function rejectAllPending(Exception $exception)
+    protected function resolveNextPending($result): void
+    {
+        $deferred = $this->pending->shift();
+        $deferred->resolve($result);
+    }
+
+    protected function rejectNextPending($message): void
+    {
+        $deferred = $this->pending->shift();
+        $deferred->reject(new RuntimeException($message));
+    }
+
+    protected function rejectAllPending(Exception $exception): void
     {
         while (! $this->pending->isEmpty()) {
             $this->pending->shift()->reject($exception);

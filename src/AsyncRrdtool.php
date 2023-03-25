@@ -34,6 +34,7 @@ class AsyncRrdtool implements LoggerAwareInterface
     protected string $currentBuffer = '';
     /** @var SplDoublyLinkedList<Deferred> */
     protected SplDoublyLinkedList $pending;
+    protected SplDoublyLinkedList $pendingStartTimes;
     protected ?TimeStatistics $spentTimings = null;
     protected ?string $processStatsLine = null;
     protected ?int $pendingImageBytes = null;
@@ -45,6 +46,7 @@ class AsyncRrdtool implements LoggerAwareInterface
         $this->basedir = $basedir;
         $this->rrdtool = $rrdtool;
         $this->pending = new SplDoublyLinkedList();
+        $this->pendingStartTimes = new SplDoublyLinkedList();
     }
 
     public function info($filename): ExtendedPromiseInterface
@@ -327,6 +329,7 @@ class AsyncRrdtool implements LoggerAwareInterface
     public function send(string $command): ExtendedPromiseInterface
     {
         $this->pending->push($deferred = new Deferred());
+        $this->pendingStartTimes->push(hrtime(true));
 
         /** @var WritableResourceStream $stdIn */
         $stdIn = $this->getProcess()->stdin;
@@ -357,12 +360,14 @@ class AsyncRrdtool implements LoggerAwareInterface
     protected function resolveNextPending($result): void
     {
         $deferred = $this->pending->shift();
+        $duration = hrtime(true) - $this->pendingStartTimes->shift();
         $deferred->resolve($result);
     }
 
     protected function rejectNextPending($message): void
     {
         $deferred = $this->pending->shift();
+        $duration = hrtime(true) - $this->pendingStartTimes->shift();
         $deferred->reject(new RuntimeException($message));
     }
 
